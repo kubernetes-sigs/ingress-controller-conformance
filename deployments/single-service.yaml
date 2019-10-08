@@ -1,12 +1,23 @@
 ---
 
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: single-service
+spec:
+  backend:
+    serviceName: single-service
+    servicePort: 80
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: qotm
+  name: single-service
 spec:
   selector:
-    app: qotm
+    app: single-service
   ports:
     - name: http
       port: 80
@@ -17,33 +28,32 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qotm
+  name: single-service
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: qotm
+      app: single-service
   template:
     metadata:
       labels:
-        app: qotm
+        app: single-service
     spec:
       containers:
-        - name: qotm
-          image: datawire/qotm:1.7
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
           imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: single-service
           ports:
             - name: http-api
-              containerPort: 5000
+              containerPort: 3000
           readinessProbe:
             httpGet:
               path: /health
-              port: 5000
+              port: 3000
             initialDelaySeconds: 5
             periodSeconds: 3
-          resources:
-            limits:
-              cpu: "0.1"
-              memory: 100Mi
