@@ -12,6 +12,7 @@ Usage:
 Available Commands:
   context     Print the current Kubernetes context and server version
   help        Help about any command
+  verify      Run all Ingress verifications for conformance
 
 Flags:
   -h, --help   help for ingress-conformance

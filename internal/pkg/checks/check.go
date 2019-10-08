@@ -1,11 +1,10 @@
-package pkg
+package checks
 
 import (
 	"fmt"
 )
 
 type Config struct {
-	Host string
 }
 
 type Check struct {
