@@ -61,7 +61,7 @@ func RequestHandler(response http.ResponseWriter, request *http.Request) {
 	requestAssertions := RequestAssertions{
 		TestId,
 		request.RequestURI,
-		request.URL.Host,
+		request.Host,
 		request.Method,
 		request.Proto,
 		request.Header,
