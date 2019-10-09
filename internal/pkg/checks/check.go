@@ -39,10 +39,10 @@ func captureRequest(location string, hostOverride string) (data CapturedRequest,
 	}
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {

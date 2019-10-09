@@ -25,7 +25,9 @@ var hostRulesCheck = &Check{
 		a := new(assertionSet)
 		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
 		a.equals(assert{resp.TestId, "host-rules", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Host, "foo.bar.com", "Expected the responding host would be '%s' but was '%s'"})
+		a.equals(assert{resp.Host, "foo.bar.com", "Expected the request host would be '%s' but was '%s'"})
+
+		// TODO: Implement more assertions on request Headers for example
 
 		if a.Error() == "" {
 			success = true
