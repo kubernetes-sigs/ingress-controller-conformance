@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"fmt"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -37,6 +38,10 @@ func GetIngressHost(namespace string, ingressName string) (host string, err erro
 	if err != nil {
 		return
 	}
-	host = ingressInterface.Status.LoadBalancer.Ingress[0].Hostname
+	if ingressInterface.Status.LoadBalancer.Ingress != nil {
+		host = ingressInterface.Status.LoadBalancer.Ingress[0].Hostname
+	} else {
+		err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no public address", ingressName)
+	}
 	return
 }
