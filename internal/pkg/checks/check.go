@@ -10,7 +10,8 @@ type Config struct {
 }
 
 type Check struct {
-	Name string
+	Name        string
+	Description string
 
 	Run func(check *Check, config Config) (bool, error)
 
@@ -86,6 +87,15 @@ func (c *Check) AddCheck(checks ...*Check) {
 
 var Checks = &Check{
 	Name: "all",
+}
+
+func (c Check) List() {
+	if c.Description != "" {
+		fmt.Printf("- %s (%s)\n", c.Description, c.Name)
+	}
+	for _, check := range c.checks {
+		check.List()
+	}
 }
 
 func (c Check) Verify(filterOnCheckName string, config Config) (successCount int, failureCount int, err error) {
