@@ -28,7 +28,8 @@ var pathRulesCheck = &Check{
 }
 
 var pathRulesFooCheck = &Check{
-	Name: "path-rules-foo",
+	Name:        "path-rules-foo",
+	Description: "Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		resp, err := captureRequest(fmt.Sprintf("http://%s/foo", host), "")
 		if err != nil {
@@ -50,7 +51,8 @@ var pathRulesFooCheck = &Check{
 }
 
 var pathRulesFooTrailingSlashCheck = &Check{
-	Name: "path-rules-foo-trailing",
+	Name:        "path-rules-foo-trailing",
+	Description: "Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		resp, err := captureRequest(fmt.Sprintf("http://%s/foo/", host), "")
 		if err != nil {
@@ -72,7 +74,8 @@ var pathRulesFooTrailingSlashCheck = &Check{
 }
 
 var pathRulesBarCheck = &Check{
-	Name: "path-rules-bar",
+	Name:        "path-rules-bar",
+	Description: "Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		resp, err := captureRequest(fmt.Sprintf("http://%s/bar/", host), "")
 		if err != nil {
@@ -94,7 +97,8 @@ var pathRulesBarCheck = &Check{
 }
 
 var pathRulesBarSubpathCheck = &Check{
-	Name: "path-rules-bar-subpath",
+	Name:        "path-rules-bar-subpath",
+	Description: "Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/'",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		resp, err := captureRequest(fmt.Sprintf("http://%s/bar//bershop", host), "")
 		if err != nil {
