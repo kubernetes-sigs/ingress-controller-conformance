@@ -18,8 +18,8 @@ var (
 
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
-	Short: "Run all Ingress verifications for conformance",
-	Long:  "Run all Ingress verifications for conformance",
+	Short: "Run Ingress verifications for conformance",
+	Long:  "Run Ingress verifications for conformance",
 	Run: func(cmd *cobra.Command, args []string) {
 		config := checks.Config{}
 		successCount, failureCount, err := checks.Checks.Verify(checkName, config)
