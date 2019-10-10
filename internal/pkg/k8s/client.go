@@ -4,6 +4,7 @@ import (
 	"fmt"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -39,9 +40,17 @@ func GetIngressHost(namespace string, ingressName string) (host string, err erro
 		return
 	}
 	if ingressInterface.Status.LoadBalancer.Ingress != nil {
-		host = ingressInterface.Status.LoadBalancer.Ingress[0].Hostname
+		ingressInterface := ingressInterface.Status.LoadBalancer.Ingress[0]
+		if ingressInterface.Hostname != "" {
+			host = ingressInterface.Hostname
+		} else {
+			host = ingressInterface.IP
+		}
+		if host == "" {
+			err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no hostname or IP", ingressName)
+		}
 	} else {
-		err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no public address", ingressName)
+		err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no load balancer interface", ingressName)
 	}
 	return
 }

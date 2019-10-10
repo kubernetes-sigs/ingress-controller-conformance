@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type Config struct {
@@ -29,7 +30,9 @@ type CapturedRequest struct {
 }
 
 func captureRequest(location string, hostOverride string) (data CapturedRequest, err error) {
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Second * 3,
+	}
 	req, err := http.NewRequest("GET", location, nil)
 	if err != nil {
 		return
@@ -102,7 +105,8 @@ func (c Check) Verify(filterOnCheckName string, config Config) (successCount int
 		return
 	}
 
-	fmt.Printf("Running %s verifications...\n", c.Name)
+	fmt.Printf("Running '%s' verifications...\n", c.Name)
+	runChildChecks := true
 	if c.Run != nil {
 		success, err := c.Run(&c, config)
 		if err != nil {
@@ -111,20 +115,23 @@ func (c Check) Verify(filterOnCheckName string, config Config) (successCount int
 
 		if success {
 			successCount++
-			fmt.Printf("  Check passed: %s\n", c.Name)
 		} else {
 			failureCount++
+			runChildChecks = false
 			fmt.Printf("  Check failed: %s\n", c.Name)
 		}
 	}
 
-	for _, check := range c.checks {
-		s, f, err := check.Verify("", config)
-		if err != nil {
-			fmt.Printf(err.Error())
+	if runChildChecks {
+		for _, check := range c.checks {
+			s, f, err := check.Verify("", config)
+			if err != nil {
+				fmt.Printf(err.Error())
+			}
+			successCount += s
+			failureCount += f
 		}
-		successCount += s
-		failureCount += f
 	}
+
 	return
 }
