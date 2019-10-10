@@ -10,7 +10,8 @@ func init() {
 }
 
 var singleServiceCheck = &Check{
-	Name: "single-service",
+	Name:        "single-service",
+	Description: "Ingress with no rules should send traffic to the correct backend service",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		host, err := k8s.GetIngressHost("default", "single-service")
 		if err != nil {
