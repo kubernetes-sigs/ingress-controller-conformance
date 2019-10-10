@@ -20,7 +20,7 @@ var contextCmd = &cobra.Command{
 			panic(err.Error())
 		}
 
-		fmt.Printf("Targetting Kubernetes cluster under active context '%s'\n", k8s.Config.CurrentContext)
+		fmt.Printf("Using active Kubernetes context '%s'\n", k8s.Config.CurrentContext)
 		fmt.Printf("The target Kubernetes cluster is running verion %s\n", serverVersion)
 	},
 }
