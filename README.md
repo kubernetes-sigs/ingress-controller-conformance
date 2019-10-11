@@ -18,8 +18,10 @@ You must manually install and setup you environment targeted by the `kubectl con
 
 ```
 $ ./ingress-conformance context
-Targetting Kubernetes cluster under active context 'docker-desktop'
+Using active Kubernetes context 'docker-desktop'
 The target Kubernetes cluster is running verion v1.14.6
+  Supports Ingress kind APIVersion: 'extensions/v1beta1'
+  Supports Ingress kind APIVersion: 'networking.k8s.io/v1beta1'
 ```
 
 #### List
@@ -73,7 +75,7 @@ Usage:
   ingress-conformance [command]
 
 Available Commands:
-  context     Print the current Kubernetes context and server version
+  context     Print the current Kubernetes context, server version, and supported Ingress APIVersions
   help        Help about any command
   list        List all Ingress verifications
   verify      Run Ingress verifications for conformance

@@ -297,7 +297,7 @@ spec:
       containers:
         - name: ambassador
           #image: quay.io/datawire/ambassador:0.84.0
-          image: agervais/ambassador:0.83.0-93-g4b57121f-dirty
+          image: agervais/ambassador:9c82cb360d40
           resources:
             limits:
               cpu: 1
