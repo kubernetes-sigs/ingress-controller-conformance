@@ -1,4 +1,4 @@
-module github.com/datawire/ingress-conformance
+module github.com/kubernetes-sigs/ingress-controller-conformance
 
 go 1.13
 
