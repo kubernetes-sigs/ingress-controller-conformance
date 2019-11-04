@@ -1,4 +1,4 @@
-# ingress-conformance
+# ingress-controller-conformance
 
 The goal of this project is to act as an executable specification in the form of a test suite, implementing a standard, actively maintained ingress-controller conformance specification.
 
@@ -8,7 +8,7 @@ The conformance test suite will both ensure consistency across implementations, 
 
 ### CLI
 
-At the moment, `ingress-conformance` does not apply modifications to the running resources in the target Kubernetes cluster.
+At the moment, `ingress-controller-conformance` does not apply modifications to the running resources in the target Kubernetes cluster.
 
 You must manually install and setup you environment targeted by the `kubectl config current-context`:
 1. Apply the backing ingress-controller implementation. Samples are available under `examples/`.
@@ -17,7 +17,7 @@ You must manually install and setup you environment targeted by the `kubectl con
 #### Context
 
 ```
-$ ./ingress-conformance context
+$ ./ingress-controller-conformance context
 Using active Kubernetes context 'docker-desktop'
 The target Kubernetes cluster is running verion v1.14.6
   Supports Ingress kind APIVersion: 'extensions/v1beta1'
@@ -28,12 +28,12 @@ The target Kubernetes cluster is running verion v1.14.6
 
 List, in a human-readable form, all Ingress verifications
 ```
-$ ./ingress-conformance list
+$ ./ingress-controller-conformance list
 - Ingress with host rule should send traffic to the correct backend service (host-rules)
-- Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-foo)
-- Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths (path-rules-foo-trailing)
-- Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-bar)
-- Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/' (path-rules-bar-subpath)
+- [SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-foo)
+- [SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths (path-rules-foo-trailing)
+- [SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-bar)
+- [SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/' (path-rules-bar-subpath)
 - Ingress with no rules should send traffic to the correct backend service (single-service)
 ```
 
@@ -41,7 +41,7 @@ $ ./ingress-conformance list
 
 Execute a series of assertions on the deployed ingress-controller, using your `kubectl` current-context.
 ```
-$ ./ingress-conformance verify
+$ ./ingress-controller-conformance verify
 Running 'all' verifications...
 Running 'host-rules' verifications...
 Running 'path-rules' verifications...
@@ -66,13 +66,13 @@ in 1.777148914s
 #### Help
 
 ```
-$ ./ingress-conformance help
+$ ./ingress-controller-conformance help
 
 Kubernetes ingress controller conformance test suite in Go.
-  Complete documentation is available at https://github.com/datawire/ingress-conformance
+  Complete documentation is available at https://github.com/kubernetes-sigs/ingress-controller-conformance
 
 Usage:
-  ingress-conformance [command]
+  ingress-controller-conformance [command]
 
 Available Commands:
   context     Print the current Kubernetes context, server version, and supported Ingress APIVersions
@@ -81,9 +81,9 @@ Available Commands:
   verify      Run Ingress verifications for conformance
 
 Flags:
-  -h, --help   help for ingress-conformance
+  -h, --help   help for ingress-controller-conformance
 
-Use "ingress-conformance [command] --help" for more information about a command.
+Use "ingress-controller-conformance [command] --help" for more information about a command.
 ```
 
 ### ingress-conformance-echo
@@ -113,7 +113,7 @@ $ docker build -f build/package/Dockerfile . -t agervais/ingress-conformance-ech
 $ docker push agervais/ingress-conformance-echo:latest
 ```
 
-#### Build the `ingress-conformance` CLI and the `echo-server`:
+#### Build the `ingress-controller-conformance` CLI and the `echo-server`:
 ```console
 $ go build
 $ go build -o echoserver tools/echoserver.go
@@ -123,5 +123,5 @@ $ go build -o echoserver tools/echoserver.go
 
 ```console
 $ export VERSION=0.0.1 # Or git tag
-$ go build -ldflags "-X github.com/datawire/ingress-conformance/cmd.VERSION=$VERSION"
+$ go build -ldflags "-X github.com/kubernetes-sigs/ingress-controller-conformance/cmd.VERSION=$VERSION"
 ```

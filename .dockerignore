@@ -16,5 +16,5 @@
 # vendor/
 
 .git
-ingress-conformance
+ingress-controller-conformance
 echoserver
