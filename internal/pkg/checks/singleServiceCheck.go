@@ -34,14 +34,18 @@ var singleServiceCheck = &Check{
 			return
 		}
 
-		resp, err := captureRequest(fmt.Sprintf("http://%s", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", host), "")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "single-service", "Expected the responding service would be '%s' but was '%s'"})
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "single-service", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+		a.equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true

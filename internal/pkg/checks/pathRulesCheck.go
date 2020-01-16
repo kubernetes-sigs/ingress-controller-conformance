@@ -47,15 +47,17 @@ var pathRulesFooCheck = &Check{
 	Name:        "path-rules-foo",
 	Description: "[SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		resp, err := captureRequest(fmt.Sprintf("http://%s/foo", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo", host), "")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "path-rules-foo", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Path, "/foo", "Expected the request path would be '%s' but was '%s'"})
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -70,15 +72,17 @@ var pathRulesFooTrailingSlashCheck = &Check{
 	Name:        "path-rules-foo-trailing",
 	Description: "[SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		resp, err := captureRequest(fmt.Sprintf("http://%s/foo/", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo/", host), "")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "path-rules-foo", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Path, "/foo/", "Expected the request path would be '%s' but was '%s'"})
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -93,15 +97,17 @@ var pathRulesBarCheck = &Check{
 	Name:        "path-rules-bar",
 	Description: "[SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		resp, err := captureRequest(fmt.Sprintf("http://%s/bar/", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar/", host), "")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "path-rules-bar", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Path, "/bar/", "Expected the request path would be '%s' but was '%s'"})
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-bar", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/bar/", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -116,15 +122,17 @@ var pathRulesBarSubpathCheck = &Check{
 	Name:        "path-rules-bar-subpath",
 	Description: "[SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/'",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		resp, err := captureRequest(fmt.Sprintf("http://%s/bar//bershop", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar//bershop", host), "")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "path-rules-bar", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Path, "/bar//bershop", "Expected the request path would be '%s' but was '%s'"})
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-bar", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/bar//bershop", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true

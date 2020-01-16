@@ -34,17 +34,22 @@ var hostRulesCheck = &Check{
 			return
 		}
 
-		resp, err := captureRequest(fmt.Sprintf("http://%s", host), "foo.bar.com")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", host), "foo.bar.com")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
-		a.equals(assert{resp.StatusCode, 200, "Expected StatusCode to be %s but was %s"})
-		a.equals(assert{resp.TestId, "host-rules", "Expected the responding service would be '%s' but was '%s'"})
-		a.equals(assert{resp.Host, "foo.bar.com", "Expected the request host would be '%s' but was '%s'"})
-
-		// TODO: Implement more assertions on request Headers for example
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "host-rules", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "foo.bar.com", "expected the request host would be '%s' but was '%s'")
+		a.equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+		a.equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+		a.containsKeys(req.Headers, []string{"User-Agent"}, "expected the request headers would contain %s but contained %s")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.equals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
+		a.containsOnlyKeys(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
 
 		if a.Error() == "" {
 			success = true

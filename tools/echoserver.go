@@ -38,6 +38,7 @@ type preserveSlashes struct {
 }
 
 func (s *preserveSlashes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// preserve the original URL Path, don't let Go normalize it
 	r.URL.Path = strings.Replace(r.URL.Path, "//", "/", -1)
 	s.mux.ServeHTTP(w, r)
 }
@@ -89,6 +90,7 @@ func RequestHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// Go libs have no gzip support for HTTP responses, sending it uncompressed.
 	response.Header().Set("Content-Type", "application/json")
 	response.Write(js)
 }

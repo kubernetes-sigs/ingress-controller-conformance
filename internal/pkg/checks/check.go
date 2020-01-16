@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -40,15 +41,28 @@ type Check struct {
 }
 
 type CapturedRequest struct {
-	StatusCode int
-	TestId     string
-	Path       string
-	Host       string
+	TestId  string
+	Path    string
+	Host    string
+	Method  string
+	Proto   string
+	Headers map[string][]string
 }
 
-func captureRequest(location string, hostOverride string) (data CapturedRequest, err error) {
+type CapturedResponse struct {
+	StatusCode    int
+	ContentLength int64
+	Proto         string
+	Headers       map[string][]string
+}
+
+func captureRequest(location string, hostOverride string) (capReq CapturedRequest, capRes CapturedResponse, err error) {
+	tr := &http.Transport{
+		DisableCompression: true,
+	}
 	client := &http.Client{
-		Timeout: time.Second * 3,
+		Transport: tr,
+		Timeout:   time.Second * 3,
 	}
 	req, err := http.NewRequest("GET", location, nil)
 	if err != nil {
@@ -64,25 +78,51 @@ func captureRequest(location string, hostOverride string) (data CapturedRequest,
 	}
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	err = json.NewDecoder(resp.Body).Decode(&capReq)
 	if err != nil {
 		return
 	}
 
-	data.StatusCode = resp.StatusCode
+	capRes = CapturedResponse{
+		resp.StatusCode,
+		resp.ContentLength,
+		resp.Proto,
+		resp.Header,
+	}
 	return
 }
 
 type assertionSet []error
-type assert struct {
-	expect        interface{}
-	actual        interface{}
-	errorTemplate string
+
+func (a *assertionSet) equals(actual interface{}, expected interface{}, errorTemplate string) {
+	if errorTemplate == "" {
+		errorTemplate = "Expected '%s' but was '%s'"
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		err := fmt.Errorf(errorTemplate, expected, actual)
+		*a = append(*a, err)
+	}
 }
 
-func (a *assertionSet) equals(assert assert) {
-	if assert.expect != assert.actual {
-		err := fmt.Errorf(assert.errorTemplate, assert.actual, assert.expect)
+func (a *assertionSet) containsKeys(actual map[string][]string, expected []string, errorTemplate string) {
+	if errorTemplate == "" {
+		errorTemplate = "Expected to contain '%s' but contained '%s'"
+	}
+	for _, expectedKey := range expected {
+		if actual[expectedKey] == nil {
+			err := fmt.Errorf(errorTemplate, expectedKey, actual)
+			*a = append(*a, err)
+		}
+	}
+}
+
+func (a *assertionSet) containsOnlyKeys(actual map[string][]string, expected []string, errorTemplate string) {
+	a.containsKeys(actual, expected, errorTemplate)
+	if errorTemplate == "" {
+		errorTemplate = "Expected to only contain '%s' but contained '%s'"
+	}
+	if len(actual) != len(expected) {
+		err := fmt.Errorf(errorTemplate, expected, actual)
 		*a = append(*a, err)
 	}
 }
