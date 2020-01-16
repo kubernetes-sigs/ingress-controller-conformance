@@ -4,6 +4,25 @@ The goal of this project is to act as an executable specification in the form of
 
 The conformance test suite will both ensure consistency across implementations, as well as simplify the work needed for other implementations to conform to the specification. The test suite can also be viewed through human readable descriptions of what it is testing so that implementers can understand the tests without reading source code.
 
+Currently, the `ingress-controller-conformance` supports the `Ingress` resource from [`networking.k8s.io/v1beta1` API](https://kubernetes.io/docs/concepts/services-networking/ingress/), with the goal to serve as a benchmark for the Ingress resource under the `networking.k8s.io/v1` API and the [Ingress/Service V2 evolution](https://kubernetes-sigs.github.io/service-apis/).
+
+## Coverage
+
+The current suite of tests covers the following features of the `Ingress` resource:
+- Plain text HTTP/1.1 requests
+- Exact and wildcard Host rules
+- Prefix path matches rules
+- No rules single-service matching
+
+Future tests should align with the Ingress resource specification and support:
+- Requests not matching any ingress rules should result in `404 Not Found` responses. Currently, all unmatched requests will fallback to a catch-all route.
+- Multiple exposed ingress addresses and ports.
+- Ingress resources with backend services across different namespaces.
+- HTTPS with SSL termination and SNI at the ingress-controller.
+- Support different path match modes for `networking.k8s.io/v1`: "exact" and "prefix" path types.
+- Other TCP protocols and UDP.
+- Load-balancing between multiple upstream instances. 
+
 ## Running
 
 ### CLI
@@ -30,10 +49,7 @@ List, in a human-readable form, all Ingress verifications
 ```
 $ ./ingress-controller-conformance list
 - Ingress with host rule should send traffic to the correct backend service (host-rules)
-- [SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-foo)
-- [SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths (path-rules-foo-trailing)
-- [SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (path-rules-bar)
-- [SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/' (path-rules-bar-subpath)
+- [...]
 - Ingress with no rules should send traffic to the correct backend service (single-service)
 ```
 

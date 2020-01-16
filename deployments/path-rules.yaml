@@ -18,6 +18,10 @@ spec:
             backend:
               serviceName: path-rules-bar
               servicePort: 80
+          - path: /
+            backend:
+              serviceName: path-rules-catchall
+              servicePort: 80
 
 ---
 
@@ -107,6 +111,55 @@ spec:
           env:
             - name: TEST_ID
               value: path-rules-bar
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-rules-catchall
+spec:
+  selector:
+    app: path-rules-catchall
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: path-rules-catchall
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: path-rules-catchall
+  template:
+    metadata:
+      labels:
+        app: path-rules-catchall
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: path-rules-catchall
           ports:
             - name: http-api
               containerPort: 3000

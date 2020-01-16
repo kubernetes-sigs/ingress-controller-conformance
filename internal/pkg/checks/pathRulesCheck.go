@@ -22,19 +22,22 @@ import (
 )
 
 func init() {
-	pathRulesCheck.AddCheck(pathRulesFooCheck)
-	pathRulesCheck.AddCheck(pathRulesFooTrailingSlashCheck)
-	pathRulesCheck.AddCheck(pathRulesBarCheck)
-	pathRulesCheck.AddCheck(pathRulesBarSubpathCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesFooCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesFooTrailingSlashCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesFooSubpathCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesFooNomatchPrefixCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesBarCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesBarTrailingSlashCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesBarSubpathCheck)
+	pathRulesCheck.AddCheck(prefixPathRulesBarNomatchPrefixCheck)
 	Checks.AddCheck(pathRulesCheck)
 }
 
-var host string
-
+var pathRulesHost string
 var pathRulesCheck = &Check{
 	Name: "path-rules",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		host, err = k8s.GetIngressHost("default", "path-rules")
+		pathRulesHost, err = k8s.GetIngressHost("default", "path-rules")
 		if err == nil {
 			success = true
 		}
@@ -43,11 +46,11 @@ var pathRulesCheck = &Check{
 	},
 }
 
-var pathRulesFooCheck = &Check{
-	Name:        "path-rules-foo",
-	Description: "[SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path",
+var prefixPathRulesFooCheck = &Check{
+	Name:        "prefix-path-rules-foo",
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo", pathRulesHost), "")
 		if err != nil {
 			return
 		}
@@ -68,11 +71,11 @@ var pathRulesFooCheck = &Check{
 	},
 }
 
-var pathRulesFooTrailingSlashCheck = &Check{
-	Name:        "path-rules-foo-trailing",
-	Description: "[SAMPLE] Ingress with path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths",
+var prefixPathRulesFooTrailingSlashCheck = &Check{
+	Name:        "prefix-path-rules-foo-trailing",
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo/", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo/", pathRulesHost), "")
 		if err != nil {
 			return
 		}
@@ -93,11 +96,61 @@ var pathRulesFooTrailingSlashCheck = &Check{
 	},
 }
 
-var pathRulesBarCheck = &Check{
-	Name:        "path-rules-bar",
-	Description: "[SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path",
+var prefixPathRulesFooSubpathCheck = &Check{
+	Name:        "prefix-path-rules-foo-subpath",
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar/", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foo/bar", pathRulesHost), "")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/foo/bar", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var prefixPathRulesFooNomatchPrefixCheck = &Check{
+	Name:        "prefix-path-rules-foo-nomatch",
+	Description: "Ingress with prefix path rule with a trailing slash should not match on a partial path and fallback to catch-all",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/foobar", pathRulesHost), "")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/foobar", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var prefixPathRulesBarCheck = &Check{
+	Name:        "prefix-path-rules-bar",
+	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar/", pathRulesHost), "")
 		if err != nil {
 			return
 		}
@@ -118,11 +171,36 @@ var pathRulesBarCheck = &Check{
 	},
 }
 
-var pathRulesBarSubpathCheck = &Check{
-	Name:        "path-rules-bar-subpath",
-	Description: "[SAMPLE] Ingress with path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/'",
+var prefixPathRulesBarTrailingSlashCheck = &Check{
+	Name:        "prefix-path-rules-bar-trailing-slash-ignored",
+	Description: "Ingress with prefix path rule with a trailing slash is ignored and should send traffic to the correct backend service, and preserve the original request path",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar//bershop", host), "")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar", pathRulesHost), "")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-bar", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/bar/", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var prefixPathRulesBarSubpathCheck = &Check{
+	Name:        "prefix-path-rules-bar-subpath",
+	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request including sub-paths and double '/'",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/bar//bershop", pathRulesHost), "")
 		if err != nil {
 			return
 		}
@@ -143,4 +221,27 @@ var pathRulesBarSubpathCheck = &Check{
 	},
 }
 
-// TODO: Implement more checks on edge cases like leading `/`, query params, and encoding
+var prefixPathRulesBarNomatchPrefixCheck = &Check{
+	Name:        "prefix-path-rules-bar-nomatch",
+	Description: "Ingress with prefix path rule with a trailing slash should not match on a partial path and fallback to catch-all",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s/barbershop", pathRulesHost), "")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Path, "/barbershop", "expected the request path would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}

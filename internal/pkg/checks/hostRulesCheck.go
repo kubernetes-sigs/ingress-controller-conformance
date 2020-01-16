@@ -22,34 +22,116 @@ import (
 )
 
 func init() {
+	hostRulesCheck.AddCheck(hostRulesExactMatchCheck)
+	hostRulesCheck.AddCheck(hostRulesMatchingWildcardCheck)
+	hostRulesCheck.AddCheck(hostRulesTopLevelWildcardCheck)
+	hostRulesCheck.AddCheck(hostRulesMultilevelWildcardCheck)
 	Checks.AddCheck(hostRulesCheck)
 }
 
+var hostRulesHost string
 var hostRulesCheck = &Check{
-	Name:        "host-rules",
-	Description: "Ingress with host rule should send traffic to the correct backend service",
+	Name: "host-rules",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		host, err := k8s.GetIngressHost("default", "host-rules")
-		if err != nil {
-			return
+		hostRulesHost, err = k8s.GetIngressHost("default", "host-rules")
+		if err == nil {
+			success = true
 		}
 
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", host), "foo.bar.com")
+		return
+	},
+}
+
+var hostRulesExactMatchCheck = &Check{
+	Name:        "host-rules-exact-match",
+	Description: "Ingress with exact host rule should send traffic to the correct backend service",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "foo.bar.com")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "host-rules", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.TestId, "host-rules-exact", "expected the downstream service would be '%s' but was '%s'")
 		a.equals(req.Host, "foo.bar.com", "expected the request host would be '%s' but was '%s'")
-		a.equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
-		a.equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
-		a.containsKeys(req.Headers, []string{"User-Agent"}, "expected the request headers would contain %s but contained %s")
 		// Assert the downstream service response
 		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-		a.equals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
-		a.containsOnlyKeys(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var hostRulesMatchingWildcardCheck = &Check{
+	Name:        "host-rules-wildcard",
+	Description: "Ingress with wildcard host rule should match single-level wildcard requests",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.bar.com")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "host-rules-wildcard", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "wildcard.bar.com", "expected the request host would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var hostRulesTopLevelWildcardCheck = &Check{
+	Name:        "host-rules-toplevel-wildcard",
+	Description: "Ingress with wildcard host rule should not match top level requests & fallback to single-service",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "bar.com")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "single-service", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "bar.com", "expected the request host would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+		if a.Error() == "" {
+			success = true
+		} else {
+			fmt.Print(a)
+		}
+		return
+	},
+}
+
+var hostRulesMultilevelWildcardCheck = &Check{
+	Name:        "host-rules-multilevel-wildcard",
+	Description: "Ingress with wildcard host rule should not match multi-level wildcard requests & fallback to single-service",
+	Run: func(check *Check, config Config) (success bool, err error) {
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.foo.bar.com")
+		if err != nil {
+			return
+		}
+
+		a := new(assertionSet)
+		// Assert the request received from the downstream service
+		a.equals(req.TestId, "single-service", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "wildcard.foo.bar.com", "expected the request host would be '%s' but was '%s'")
+		// Assert the downstream service response
+		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
