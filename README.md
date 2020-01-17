@@ -4,24 +4,25 @@ The goal of this project is to act as an executable specification in the form of
 
 The conformance test suite will both ensure consistency across implementations, as well as simplify the work needed for other implementations to conform to the specification. The test suite can also be viewed through human readable descriptions of what it is testing so that implementers can understand the tests without reading source code.
 
-Currently, the `ingress-controller-conformance` supports the `Ingress` resource from [`networking.k8s.io/v1beta1` API](https://kubernetes.io/docs/concepts/services-networking/ingress/), with the goal to serve as a benchmark for the Ingress resource under the `networking.k8s.io/v1` API and the [Ingress/Service V2 evolution](https://kubernetes-sigs.github.io/service-apis/).
+Currently, the `ingress-controller-conformance` supports the `Ingress` resource from [`networking.k8s.io/v1beta1` API](https://kubernetes.io/docs/concepts/services-networking/ingress/), with the desire to serve as a benchmark for the Ingress resource under the [`networking.k8s.io/v1` API](https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190125-ingress-api-group.md) and the [Ingress/Service V2 evolution](https://kubernetes-sigs.github.io/service-apis/) proposals.
 
 ## Coverage
 
-The current suite of tests covers the following features of the `Ingress` resource:
+The current suite of implemented tests covers the following features of the `Ingress` resource:
 - Plain text HTTP/1.1 requests
 - Exact and wildcard Host rules
 - Prefix path matches rules
-- No rules single-service matching
+- No rules single-service delegation
 
-Future tests should align with the Ingress resource specification and support:
-- Requests not matching any ingress rules should result in `404 Not Found` responses. Currently, all unmatched requests will fallback to a catch-all route.
+Future tests should align with the Ingress resource specification, and support:
+- HTTP requests without any matching ingress rules should result in a standard `404 Not Found` responses. Currently, all unmatched requests will fallback to the default-backend.
 - Multiple exposed ingress addresses and ports.
 - Ingress resources with backend services across different namespaces.
-- HTTPS with SSL termination and SNI at the ingress-controller.
-- Support different path match modes for `networking.k8s.io/v1`: "exact" and "prefix" path types.
-- Other TCP protocols and UDP.
-- Load-balancing between multiple upstream instances. 
+- HTTPS with SSL termination and SNI.
+- Support different path match modes: "exact", "prefix", and "regex" path types.
+- Other TCP protocols backend types.
+- Load-balancing between multiple upstream instances.
+- Assert commonly implemented extension points in various ingress-controllers such as gzip compression and keep-alive connections.
 
 ## Running
 
@@ -31,7 +32,7 @@ At the moment, `ingress-controller-conformance` does not apply modifications to 
 
 You must manually install and setup you environment targeted by the `kubectl config current-context`:
 1. Apply the backing ingress-controller implementation. Samples are available under `examples/`.
-1. Apply all, or a subset, of the ingress and service resources found under `deployments`. Files under the deployments folder match implemented check names.
+1. Apply all, or a subset, of the ingress and service resources found under `deployments/`. Files under the `deployments` folder correspond to implemented check names.
 
 #### Context
 
@@ -45,7 +46,7 @@ The target Kubernetes cluster is running verion v1.14.6
 
 #### List
 
-List, in a human-readable form, all Ingress verifications
+Lists, in a human-readable form, all Ingress verifications
 ```
 $ ./ingress-controller-conformance list
 - Ingress with host rule should send traffic to the correct backend service (host-rules)
