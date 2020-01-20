@@ -3,12 +3,12 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: single-service
+  name: default-backend
   annotations:
     kubernetes.io/ingress.class: ambassador
 spec:
   backend:
-    serviceName: single-service
+    serviceName: default-backend
     servicePort: 80
 
 ---
@@ -16,10 +16,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: single-service
+  name: default-backend
 spec:
   selector:
-    app: single-service
+    app: default-backend
   ports:
     - name: http
       port: 80
@@ -30,18 +30,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: single-service
+  name: default-backend
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: single-service
+      app: default-backend
   template:
     metadata:
       labels:
-        app: single-service
+        app: default-backend
     spec:
       containers:
         - name: ingress-conformance-echo
@@ -49,7 +49,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: TEST_ID
-              value: single-service
+              value: default-backend
           ports:
             - name: http-api
               containerPort: 3000

@@ -8,16 +8,36 @@ metadata:
     kubernetes.io/ingress.class: ambassador
 spec:
   rules:
-    - http:
+    # Invalid paths, validated by the api-server:
+    # - path: routes/with/no-leading-slash/are-ignored
+    # - path: ../routes/with/relative-paths/are-ignored
+    #
+    # "must be an absolute path"
+    #
+
+    - host: "path-rules"
+      http:
         paths:
           - path: /foo
             backend:
               serviceName: path-rules-foo
               servicePort: 80
-          - path: /bar/
+
+          - path: /aaa/bbb/
             backend:
-              serviceName: path-rules-bar
+              serviceName: path-rules-aaa-bbb
               servicePort: 80
+
+          - path: /routes/with/consecutive//slashes///are-ignored
+            backend:
+              serviceName: void
+              servicePort: 80
+
+          - path: /routes with invalid characters are ignored!
+            backend:
+              serviceName: void
+              servicePort: 80
+
           - path: /
             backend:
               serviceName: path-rules-catchall
@@ -77,10 +97,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: path-rules-bar
+  name: path-rules-aaa-bbb
 spec:
   selector:
-    app: path-rules-bar
+    app: path-rules-aaa-bbb
   ports:
     - name: http
       port: 80
@@ -91,18 +111,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: path-rules-bar
+  name: path-rules-aaa-bbb
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: path-rules-bar
+      app: path-rules-aaa-bbb
   template:
     metadata:
       labels:
-        app: path-rules-bar
+        app: path-rules-aaa-bbb
     spec:
       containers:
         - name: ingress-conformance-echo
@@ -110,7 +130,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: TEST_ID
-              value: path-rules-bar
+              value: path-rules-aaa-bbb
           ports:
             - name: http-api
               containerPort: 3000

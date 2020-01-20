@@ -12,7 +12,7 @@ The current suite of implemented tests covers the following features of the `Ing
 - Plain text HTTP/1.1 requests
 - Exact and wildcard Host rules
 - Prefix path matches rules
-- No rules single-service delegation
+- No rules default-backend delegation
 
 Future tests should align with the Ingress resource specification, and support:
 - HTTP requests without any matching ingress rules should result in a standard `404 Not Found` responses. Currently, all unmatched requests will fallback to the default-backend.
@@ -51,7 +51,7 @@ Lists, in a human-readable form, all Ingress verifications
 $ ./ingress-controller-conformance list
 - Ingress with host rule should send traffic to the correct backend service (host-rules)
 - [...]
-- Ingress with no rules should send traffic to the correct backend service (single-service)
+- [...]
 ```
 
 #### Verify
@@ -68,13 +68,7 @@ Running 'path-rules-foo' verifications...
 Running 'path-rules-foo-trailing' verifications...
         1) Assertion failed: Expected the request path would be '/foo/' but was '//'
   Check failed: path-rules-foo-trailing
-Running 'path-rules-bar' verifications...
-        1) Assertion failed: Expected the request path would be '/bar/' but was '/'
-  Check failed: path-rules-bar
-Running 'path-rules-bar-subpath' verifications...
-        1) Assertion failed: Expected the request path would be '/bar//bershop' but was '//bershop'
-  Check failed: path-rules-bar-subpath
-Running 'single-service' verifications...
+[...]
 --- Verification completed ---
 3 checks passed! 4 failures!
 in 1.777148914s

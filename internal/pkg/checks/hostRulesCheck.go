@@ -23,9 +23,9 @@ import (
 
 func init() {
 	hostRulesCheck.AddCheck(hostRulesExactMatchCheck)
-	hostRulesCheck.AddCheck(hostRulesMatchingWildcardCheck)
-	hostRulesCheck.AddCheck(hostRulesTopLevelWildcardCheck)
-	hostRulesCheck.AddCheck(hostRulesMultilevelWildcardCheck)
+	hostRulesCheck.AddCheck(hostRulesWildcardSingleLabelCheck)
+	hostRulesCheck.AddCheck(hostRulesWildcardMultipleLabelsCheck)
+	hostRulesCheck.AddCheck(hostRulesWildcardNoLabelCheck)
 	Checks.AddCheck(hostRulesCheck)
 }
 
@@ -67,11 +67,11 @@ var hostRulesExactMatchCheck = &Check{
 	},
 }
 
-var hostRulesMatchingWildcardCheck = &Check{
-	Name:        "host-rules-wildcard",
-	Description: "Ingress with wildcard host rule should match single-level wildcard requests",
+var hostRulesWildcardSingleLabelCheck = &Check{
+	Name:        "host-rules-wildcard-single-label",
+	Description: "Ingress with wildcard host rule should match a single label",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.bar.com")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.foo.com")
 		if err != nil {
 			return
 		}
@@ -79,7 +79,7 @@ var hostRulesMatchingWildcardCheck = &Check{
 		a := new(assertionSet)
 		// Assert the request received from the downstream service
 		a.equals(req.TestId, "host-rules-wildcard", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Host, "wildcard.bar.com", "expected the request host would be '%s' but was '%s'")
+		a.equals(req.Host, "wildcard.foo.com", "expected the request host would be '%s' but was '%s'")
 		// Assert the downstream service response
 		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
@@ -92,19 +92,19 @@ var hostRulesMatchingWildcardCheck = &Check{
 	},
 }
 
-var hostRulesTopLevelWildcardCheck = &Check{
-	Name:        "host-rules-toplevel-wildcard",
-	Description: "Ingress with wildcard host rule should not match top level requests & fallback to single-service",
+var hostRulesWildcardMultipleLabelsCheck = &Check{
+	Name:        "host-rules-wildcard-multiple-labels",
+	Description: "Ingress with wildcard host rule should only match a single label & fallback to default-backend",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "bar.com")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "aaa.bbb.foo.com")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "single-service", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Host, "bar.com", "expected the request host would be '%s' but was '%s'")
+		a.equals(req.TestId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "aaa.bbb.foo.com", "expected the request host would be '%s' but was '%s'")
 		// Assert the downstream service response
 		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
@@ -117,19 +117,19 @@ var hostRulesTopLevelWildcardCheck = &Check{
 	},
 }
 
-var hostRulesMultilevelWildcardCheck = &Check{
-	Name:        "host-rules-multilevel-wildcard",
-	Description: "Ingress with wildcard host rule should not match multi-level wildcard requests & fallback to single-service",
+var hostRulesWildcardNoLabelCheck = &Check{
+	Name:        "host-rules-wildcard-no-label",
+	Description: "Ingress with wildcard host rule should match exactly one single label & fallback to default-backend",
 	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.foo.bar.com")
+		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "foo.com")
 		if err != nil {
 			return
 		}
 
 		a := new(assertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "single-service", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Host, "wildcard.foo.bar.com", "expected the request host would be '%s' but was '%s'")
+		a.equals(req.TestId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+		a.equals(req.Host, "foo.com", "expected the request host would be '%s' but was '%s'")
 		// Assert the downstream service response
 		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 

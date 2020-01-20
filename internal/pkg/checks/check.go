@@ -19,6 +19,7 @@ package checks
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"time"
@@ -80,6 +81,8 @@ func captureRequest(location string, hostOverride string) (capReq CapturedReques
 
 	err = json.NewDecoder(resp.Body).Decode(&capReq)
 	if err != nil {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = fmt.Errorf("unexpected response (statuscode: %d, length: %d): %s", resp.StatusCode, len(body), body)
 		return
 	}
 
