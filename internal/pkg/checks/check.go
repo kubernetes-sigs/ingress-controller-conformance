@@ -153,7 +153,7 @@ var Checks = &Check{
 
 func (c Check) List() {
 	if c.Description != "" {
-		fmt.Printf("- %s (%s)\n", c.Description, c.Name)
+		fmt.Printf("- %s [%s]\n", c.Description, c.Name)
 	}
 	for _, check := range c.checks {
 		check.List()

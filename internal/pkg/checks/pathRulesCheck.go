@@ -319,7 +319,7 @@ var pathRulesPrefixConsecutiveSlashesCheck = &Check{
 
 var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &Check{
 	Name:        "path-rules-prefix-consecutive-slashes-normalized",
-	Description: "Ingress with prefix path rule with consecutive slashes are ignored",
+	Description: "Ingress with prefix path rule with consecutive slashes are ignored with normalized request",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		req, res, err := captureRequest(fmt.Sprintf("http://%s/routes/with/consecutive/slashes/are-ignored", pathRulesHost), "path-rules")
 		if err != nil {
@@ -344,7 +344,7 @@ var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &Check{
 
 var pathRulesPrefixInvalidCharactersCheck = &Check{
 	Name:        "path-rules-prefix-invalid-characters",
-	Description: "Ingress with prefix path rule with consecutive slashes are ignored",
+	Description: "Ingress with prefix path rule with invalid characters are ignored",
 	Run: func(check *Check, config Config) (success bool, err error) {
 		req, res, err := captureRequest(fmt.Sprintf("http://%s/routes with invalid characters are ignored!", pathRulesHost), "path-rules")
 		if err != nil {
