@@ -23,35 +23,58 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"os"
+	"sync"
 )
 
-func init() {
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
-	// use the current context in kubeconfig
-	clientConfig, err := kubeconfig.ClientConfig()
-	if err != nil {
-		panic(err.Error())
-	}
+var (
+	cachedClient *kubernetes.Clientset
+	cachedConfig *api.Config
 
-	Config, err = loadingRules.Load()
-	if err != nil {
-		panic(err.Error())
-	}
+	once sync.Once
+)
 
-	Client, err = kubernetes.NewForConfig(clientConfig)
+func initClient() {
+	err := func() error {
+		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+		kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+		// use the current context in kubeconfig
+		clientConfig, err := kubeconfig.ClientConfig()
+		if err != nil {
+			return err
+		}
+
+		cachedConfig, err = loadingRules.Load()
+		if err != nil {
+			return err
+		}
+
+		cachedClient, err = kubernetes.NewForConfig(clientConfig)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}()
+
 	if err != nil {
-		panic(err.Error())
+		fmt.Fprintf(os.Stderr, "failed to configure Kubernetes cluster context: %s\n", err)
+		os.Exit(1)
 	}
 }
 
-var (
-	Client *kubernetes.Clientset
-	Config *api.Config
-)
+func Client() *kubernetes.Clientset {
+	once.Do(initClient)
+	return cachedClient
+}
+
+func Config() *api.Config {
+	once.Do(initClient)
+	return cachedConfig
+}
 
 func GetIngressHost(namespace string, ingressName string) (host string, err error) {
-	ingressInterface, err := Client.NetworkingV1beta1().Ingresses(namespace).Get(ingressName, v1.GetOptions{})
+	ingressInterface, err := Client().NetworkingV1beta1().Ingresses(namespace).Get(ingressName, v1.GetOptions{})
 	if err != nil {
 		return
 	}
