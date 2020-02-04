@@ -36,7 +36,6 @@ func init() {
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbSlashCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbCccCheck)
-	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbcccCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixConsecutiveSlashesCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixConsecutiveSlashesNormalizedCheck)
@@ -76,12 +75,12 @@ var pathRulesPrefixAllPathsCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -101,12 +100,12 @@ var pathRulesPrefixFooCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -126,12 +125,12 @@ var pathRulesPrefixFooSlashCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -151,12 +150,12 @@ var pathRulesPrefixFoCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -176,12 +175,12 @@ var pathRulesPrefixAaaBbbCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -201,12 +200,12 @@ var pathRulesPrefixAaaBbbSlashCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -226,37 +225,12 @@ var pathRulesPrefixAaaBbbCccCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-
-		if a.Error() == "" {
-			success = true
-		} else {
-			fmt.Print(a)
-		}
-		return
-	},
-}
-
-var pathRulesPrefixAaaBbCheck = &Check{
-	Name:        "path-rules-prefix-aaa-bb",
-	Description: "Ingress with prefix path rule with a trailing slash should not match partial paths (/aaa/bbb/ does not match /aaa/bb)",
-	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s/aaa/bb", pathRulesHost), "path-rules")
-		if err != nil {
-			return
-		}
-
-		a := new(assertionSet)
-		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/aaa/bb", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -276,12 +250,12 @@ var pathRulesPrefixAaaBbbcccCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -301,12 +275,12 @@ var pathRulesPrefixConsecutiveSlashesCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -326,12 +300,12 @@ var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true
@@ -351,12 +325,12 @@ var pathRulesPrefixInvalidCharactersCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
+		a.Equals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
 			success = true

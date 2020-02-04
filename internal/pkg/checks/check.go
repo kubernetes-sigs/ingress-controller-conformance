@@ -42,12 +42,12 @@ type Check struct {
 }
 
 type CapturedRequest struct {
-	TestId  string
-	Path    string
-	Host    string
-	Method  string
-	Proto   string
-	Headers map[string][]string
+	DownstreamServiceId string `json:"testId"`
+	Path                string
+	Host                string
+	Method              string
+	Proto               string
+	Headers             map[string][]string
 }
 
 type CapturedResponse struct {
@@ -95,9 +95,9 @@ func captureRequest(location string, hostOverride string) (capReq CapturedReques
 	return
 }
 
-type assertionSet []error
+type AssertionSet []error
 
-func (a *assertionSet) equals(actual interface{}, expected interface{}, errorTemplate string) {
+func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTemplate string) {
 	if errorTemplate == "" {
 		errorTemplate = "Expected '%s' but was '%s'"
 	}
@@ -107,7 +107,7 @@ func (a *assertionSet) equals(actual interface{}, expected interface{}, errorTem
 	}
 }
 
-func (a *assertionSet) containsKeys(actual map[string][]string, expected []string, errorTemplate string) {
+func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []string, errorTemplate string) {
 	if errorTemplate == "" {
 		errorTemplate = "Expected to contain '%s' but contained '%s'"
 	}
@@ -119,8 +119,8 @@ func (a *assertionSet) containsKeys(actual map[string][]string, expected []strin
 	}
 }
 
-func (a *assertionSet) containsOnlyKeys(actual map[string][]string, expected []string, errorTemplate string) {
-	a.containsKeys(actual, expected, errorTemplate)
+func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected []string, errorTemplate string) {
+	a.ContainsHeaders(actual, expected, errorTemplate)
 	if errorTemplate == "" {
 		errorTemplate = "Expected to only contain '%s' but contained '%s'"
 	}
@@ -130,7 +130,7 @@ func (a *assertionSet) containsOnlyKeys(actual map[string][]string, expected []s
 	}
 }
 
-func (a *assertionSet) Error() (err string) {
+func (a *AssertionSet) Error() (err string) {
 	for i, e := range *a {
 		err += fmt.Sprintf("\t%d) Assertion failed: %s\n", i+1, e.Error())
 	}

@@ -39,16 +39,16 @@ var singleServiceCheck = &Check{
 			return
 		}
 
-		a := new(assertionSet)
+		a := new(AssertionSet)
 		// Assert the request received from the downstream service
-		a.equals(req.TestId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-		a.equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
-		a.equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
-		a.containsKeys(req.Headers, []string{"User-Agent"}, "expected the request headers would contain %s but contained %s")
+		a.Equals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+		a.Equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+		a.Equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+		a.ContainsHeaders(req.Headers, []string{"User-Agent"}, "expected the request headers would contain %s but contained %s")
 		// Assert the downstream service response
-		a.equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-		a.equals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
-		a.containsOnlyKeys(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
+		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.Equals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
+		a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
 
 		if a.Error() == "" {
 			success = true
