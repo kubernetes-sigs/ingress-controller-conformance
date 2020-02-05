@@ -3,9 +3,11 @@ module github.com/kubernetes-sigs/ingress-controller-conformance
 go 1.13
 
 require (
-	github.com/pkg/errors v0.8.1
+	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/spf13/cobra v0.0.5
-	golang.org/x/text v0.3.1-0.20181227161524-e6919f6577db
-	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
-	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
+	golang.org/x/text v0.3.2
+	k8s.io/apimachinery v0.18.0-alpha.2
+	k8s.io/cli-runtime v0.18.0-alpha.2
+	k8s.io/client-go v0.18.0-alpha.2
+	k8s.io/kubectl v0.18.0-alpha.2
 )

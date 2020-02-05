@@ -18,7 +18,9 @@ package k8s
 
 import (
 	"fmt"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
@@ -92,4 +94,8 @@ func GetIngressHost(namespace string, ingressName string) (host string, err erro
 		err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no load balancer interface", ingressName)
 	}
 	return
+}
+
+func NewClientGetter() genericclioptions.RESTClientGetter {
+	return &genericclioptions.ConfigFlags{}
 }
