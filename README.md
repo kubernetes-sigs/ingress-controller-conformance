@@ -34,6 +34,26 @@ You must manually install and setup you environment targeted by the `kubectl con
 1. Apply the backing ingress-controller implementation. Samples are available under `examples/`.
 1. Apply all, or a subset, of the ingress and service resources found under `deployments/`. Files under the `deployments` folder correspond to implemented check names.
 
+#### Apply
+
+The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
+The "apply" command applies these resources to your Kuberenetes cluster using your `kubectl` current-context.
+
+```
+$ ./ingress-controller-conformance apply
+ingress.networking.k8s.io/host-rules created
+service/host-rules created
+deployment.apps/host-rules created
+ingress.networking.k8s.io/path-rules created
+service/path-rules-foo created
+deployment.apps/path-rules-foo created
+service/path-rules-bar created
+deployment.apps/path-rules-bar created
+ingress.networking.k8s.io/single-service created
+service/single-service created
+deployment.apps/single-service created
+```
+
 #### Context
 
 ```
@@ -86,6 +106,7 @@ Usage:
   ingress-controller-conformance [command]
 
 Available Commands:
+  apply       Apply Ingress conformance resources to the current cluster
   context     Print the current Kubernetes context, server version, and supported Ingress APIVersions
   help        Help about any command
   list        List all Ingress verifications
@@ -126,8 +147,9 @@ $ docker push agervais/ingress-conformance-echo:latest
 
 #### Build the `ingress-controller-conformance` CLI and the `echo-server`:
 ```console
-$ go build
-$ go build -o echoserver tools/echoserver.go
+$ make
+go build -o echoserver tools/echoserver.go
+go build -o ingress-controller-conformance .
 ```
 
 ### Release build
