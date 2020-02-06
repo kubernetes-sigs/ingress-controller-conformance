@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Ingress conformance test harness machinery
 package checks
 
 import (
@@ -25,22 +26,28 @@ import (
 	"time"
 )
 
+// Config contains test suite configuration fields
 type Config struct {
 }
 
+// Check represents a test case. Checks are named, and must provide a
+// description and a Run function. Checks are organized in a hierarchy.
 type Check struct {
 	Name        string
 	Description string
 
 	Run func(check *Check, config Config) (bool, error)
 
-	// All checks
+	// Child checks
 	checks []*Check
-
 	// Parent check
 	parent *Check
 }
 
+// CapturedRequest contains the original HTTP request metadata as received
+// by the echoserver handling the test request.
+// The DownstreamServiceId field contains the TEST_ID environment variable
+// value of the downstream echoserver.
 type CapturedRequest struct {
 	DownstreamServiceId string `json:"testId"`
 	Path                string
@@ -50,12 +57,16 @@ type CapturedRequest struct {
 	Headers             map[string][]string
 }
 
+// CapturedResponse contains the HTTP response metadata from the echoserver
 type CapturedResponse struct {
 	StatusCode    int
 	ContentLength int64
 	Proto         string
 	Headers       map[string][]string
 }
+
+// AssertionSet performs checks and accumulates assertion errors
+type AssertionSet []error
 
 func captureRequest(location string, hostOverride string) (capReq CapturedRequest, capRes CapturedResponse, err error) {
 	tr := &http.Transport{
@@ -95,8 +106,7 @@ func captureRequest(location string, hostOverride string) (capReq CapturedReques
 	return
 }
 
-type AssertionSet []error
-
+// Assert actual and expected parameters are deeply equal
 func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTemplate string) {
 	if errorTemplate == "" {
 		errorTemplate = "Expected '%s' but was '%s'"
@@ -107,6 +117,7 @@ func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTem
 	}
 }
 
+// Assert the actual headers contains the expected headers key
 func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []string, errorTemplate string) {
 	if errorTemplate == "" {
 		errorTemplate = "Expected to contain '%s' but contained '%s'"
@@ -119,6 +130,7 @@ func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []st
 	}
 }
 
+// Assert the actual headers contains exactly the expected headers key and no more
 func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected []string, errorTemplate string) {
 	a.ContainsHeaders(actual, expected, errorTemplate)
 	if errorTemplate == "" {
@@ -137,6 +149,12 @@ func (a *AssertionSet) Error() (err string) {
 	return
 }
 
+// Head of Check hierarchy
+var Checks = &Check{
+	Name: "all",
+}
+
+// Add child checks
 func (c *Check) AddCheck(checks ...*Check) {
 	for i, x := range checks {
 		if checks[i] == c {
@@ -147,10 +165,7 @@ func (c *Check) AddCheck(checks ...*Check) {
 	}
 }
 
-var Checks = &Check{
-	Name: "all",
-}
-
+// List this check and its child's description
 func (c Check) List() {
 	if c.Description != "" {
 		fmt.Printf("- %s [%s]\n", c.Description, c.Name)
@@ -160,6 +175,7 @@ func (c Check) List() {
 	}
 }
 
+// Run all checks, filtered by name and given a configuration
 func (c Check) Verify(filterOnCheckName string, config Config) (successCount int, failureCount int, err error) {
 	if filterOnCheckName != c.Name && filterOnCheckName != "" {
 		for _, check := range c.checks {

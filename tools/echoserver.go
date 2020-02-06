@@ -24,6 +24,8 @@ import (
 	"strings"
 )
 
+// RequestAssertions contains the HTTP response which can be asserted
+// by checks.CapturedRequest
 type RequestAssertions struct {
 	TestId  string
 	Path    string
