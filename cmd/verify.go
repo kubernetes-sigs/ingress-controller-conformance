@@ -23,6 +23,7 @@ import (
 	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"os"
 	"time"
 )
 
@@ -83,5 +84,10 @@ var verifyCmd = &cobra.Command{
 			p.Sprintf("%d success", successCount),
 			p.Sprintf("%d failure", failureCount),
 			elapsed)
+
+		// should exit with a non-zero status if we have test failures
+		if err != nil || failureCount > 0 {
+			os.Exit(1)
+		}
 	},
 }
