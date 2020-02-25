@@ -93,6 +93,8 @@ func RequestHandler(response http.ResponseWriter, request *http.Request) {
 	}
 
 	// Go libs have no gzip support for HTTP responses, sending it uncompressed.
+	// If the client gets a compressed gzip response, it means the ingress-controller compressed it.
 	response.Header().Set("Content-Type", "application/json")
+
 	response.Write(js)
 }

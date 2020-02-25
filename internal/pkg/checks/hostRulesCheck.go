@@ -32,26 +32,26 @@ func init() {
 var hostRulesHost string
 var hostRulesCheck = &Check{
 	Name: "host-rules",
-	Run: func(check *Check, config Config) (success bool, err error) {
+	Run: func(check *Check, config Config) (bool, error) {
+		var err error
 		hostRulesHost, err = k8s.GetIngressHost("default", "host-rules")
-		if err == nil {
-			success = true
+		if err != nil {
+			return false, err
 		}
-
-		return
+		return true, nil
 	},
 }
 
 var hostRulesExactMatchCheck = &Check{
 	Name:        "host-rules-exact-match",
 	Description: "Ingress with exact host rule should send traffic to the correct backend service",
-	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "foo.bar.com")
+	Run: func(check *Check, config Config) (bool, error) {
+		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", hostRulesHost), "foo.bar.com")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		a := new(AssertionSet)
+		a := &AssertionSet{}
 		// Assert the request received from the downstream service
 		a.Equals(req.DownstreamServiceId, "host-rules-exact", "expected the downstream service would be '%s' but was '%s'")
 		a.Equals(req.Host, "foo.bar.com", "expected the request host would be '%s' but was '%s'")
@@ -59,24 +59,24 @@ var hostRulesExactMatchCheck = &Check{
 		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
-			success = true
+			return true, nil
 		} else {
 			fmt.Print(a)
 		}
-		return
+		return false, nil
 	},
 }
 
 var hostRulesWildcardSingleLabelCheck = &Check{
 	Name:        "host-rules-wildcard-single-label",
 	Description: "Ingress with wildcard host rule should match a single label",
-	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.foo.com")
+	Run: func(check *Check, config Config) (bool, error) {
+		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", hostRulesHost), "wildcard.foo.com")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		a := new(AssertionSet)
+		a := &AssertionSet{}
 		// Assert the request received from the downstream service
 		a.Equals(req.DownstreamServiceId, "host-rules-wildcard", "expected the downstream service would be '%s' but was '%s'")
 		a.Equals(req.Host, "wildcard.foo.com", "expected the request host would be '%s' but was '%s'")
@@ -84,24 +84,24 @@ var hostRulesWildcardSingleLabelCheck = &Check{
 		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
-			success = true
+			return true, nil
 		} else {
 			fmt.Print(a)
 		}
-		return
+		return false, nil
 	},
 }
 
 var hostRulesWildcardMultipleLabelsCheck = &Check{
 	Name:        "host-rules-wildcard-multiple-labels",
 	Description: "Ingress with wildcard host rule should only match a single label & fallback to default-backend",
-	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "aaa.bbb.foo.com")
+	Run: func(check *Check, config Config) (bool, error) {
+		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", hostRulesHost), "aaa.bbb.foo.com")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		a := new(AssertionSet)
+		a := &AssertionSet{}
 		// Assert the request received from the downstream service
 		a.Equals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
 		a.Equals(req.Host, "aaa.bbb.foo.com", "expected the request host would be '%s' but was '%s'")
@@ -109,24 +109,24 @@ var hostRulesWildcardMultipleLabelsCheck = &Check{
 		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
-			success = true
+			return true, nil
 		} else {
 			fmt.Print(a)
 		}
-		return
+		return false, nil
 	},
 }
 
 var hostRulesWildcardNoLabelCheck = &Check{
 	Name:        "host-rules-wildcard-no-label",
 	Description: "Ingress with wildcard host rule should match exactly one single label & fallback to default-backend",
-	Run: func(check *Check, config Config) (success bool, err error) {
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", hostRulesHost), "foo.com")
+	Run: func(check *Check, config Config) (bool, error) {
+		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", hostRulesHost), "foo.com")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		a := new(AssertionSet)
+		a := &AssertionSet{}
 		// Assert the request received from the downstream service
 		a.Equals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
 		a.Equals(req.Host, "foo.com", "expected the request host would be '%s' but was '%s'")
@@ -134,10 +134,10 @@ var hostRulesWildcardNoLabelCheck = &Check{
 		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 		if a.Error() == "" {
-			success = true
+			return true, nil
 		} else {
 			fmt.Print(a)
 		}
-		return
+		return false, nil
 	},
 }

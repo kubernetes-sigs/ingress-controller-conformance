@@ -28,18 +28,18 @@ func init() {
 var singleServiceCheck = &Check{
 	Name:        "default-backend",
 	Description: "Ingress with a single default backend should send traffic to the correct backend service",
-	Run: func(check *Check, config Config) (success bool, err error) {
+	Run: func(check *Check, config Config) (bool, error) {
 		host, err := k8s.GetIngressHost("default", "default-backend")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		req, res, err := captureRequest(fmt.Sprintf("http://%s", host), "")
+		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", host), "")
 		if err != nil {
-			return
+			return false, err
 		}
 
-		a := new(AssertionSet)
+		a := &AssertionSet{}
 		// Assert the request received from the downstream service
 		a.Equals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
 		a.Equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
@@ -51,10 +51,10 @@ var singleServiceCheck = &Check{
 		a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
 
 		if a.Error() == "" {
-			success = true
+			return true, nil
 		} else {
 			fmt.Print(a)
 		}
-		return
+		return false, nil
 	},
 }

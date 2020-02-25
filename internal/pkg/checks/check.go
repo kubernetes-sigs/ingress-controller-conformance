@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"time"
 )
 
@@ -36,7 +35,7 @@ type Check struct {
 	Name        string
 	Description string
 
-	Run func(check *Check, config Config) (bool, error)
+	Run func(check *Check, config Config) (success bool, err error)
 
 	// Child checks
 	checks []*Check
@@ -65,10 +64,7 @@ type CapturedResponse struct {
 	Headers       map[string][]string
 }
 
-// AssertionSet performs checks and accumulates assertion errors
-type AssertionSet []error
-
-func captureRequest(location string, hostOverride string) (capReq CapturedRequest, capRes CapturedResponse, err error) {
+func captureRoundTrip(location string, hostOverride string) (*CapturedRequest, *CapturedResponse, error) {
 	tr := &http.Transport{
 		DisableCompression: true,
 	}
@@ -78,7 +74,7 @@ func captureRequest(location string, hostOverride string) (capReq CapturedReques
 	}
 	req, err := http.NewRequest("GET", location, nil)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 	if hostOverride != "" {
 		req.Host = hostOverride
@@ -86,67 +82,25 @@ func captureRequest(location string, hostOverride string) (capReq CapturedReques
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&capReq)
+	capReq := &CapturedRequest{}
+	err = json.NewDecoder(resp.Body).Decode(capReq)
 	if err != nil {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = fmt.Errorf("unexpected response (statuscode: %d, length: %d): %s", resp.StatusCode, len(body), body)
-		return
+		return nil, nil, err
 	}
 
-	capRes = CapturedResponse{
+	capRes := &CapturedResponse{
 		resp.StatusCode,
 		resp.ContentLength,
 		resp.Proto,
 		resp.Header,
 	}
-	return
-}
-
-// Assert actual and expected parameters are deeply equal
-func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTemplate string) {
-	if errorTemplate == "" {
-		errorTemplate = "Expected '%s' but was '%s'"
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		err := fmt.Errorf(errorTemplate, expected, actual)
-		*a = append(*a, err)
-	}
-}
-
-// Assert the actual headers contains the expected headers key
-func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []string, errorTemplate string) {
-	if errorTemplate == "" {
-		errorTemplate = "Expected to contain '%s' but contained '%s'"
-	}
-	for _, expectedKey := range expected {
-		if actual[expectedKey] == nil {
-			err := fmt.Errorf(errorTemplate, expectedKey, actual)
-			*a = append(*a, err)
-		}
-	}
-}
-
-// Assert the actual headers contains exactly the expected headers key and no more
-func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected []string, errorTemplate string) {
-	a.ContainsHeaders(actual, expected, errorTemplate)
-	if errorTemplate == "" {
-		errorTemplate = "Expected to only contain '%s' but contained '%s'"
-	}
-	if len(actual) != len(expected) {
-		err := fmt.Errorf(errorTemplate, expected, actual)
-		*a = append(*a, err)
-	}
-}
-
-func (a *AssertionSet) Error() (err string) {
-	for i, e := range *a {
-		err += fmt.Sprintf("\t%d) Assertion failed: %s\n", i+1, e.Error())
-	}
-	return
+	return capReq, capRes, nil
 }
 
 // Head of Check hierarchy
@@ -166,7 +120,7 @@ func (c *Check) AddCheck(checks ...*Check) {
 }
 
 // List this check and its child's description
-func (c Check) List() {
+func (c *Check) List() {
 	if c.Description != "" {
 		fmt.Printf("- %s [%s]\n", c.Description, c.Name)
 	}
@@ -176,7 +130,7 @@ func (c Check) List() {
 }
 
 // Run all checks, filtered by name and given a configuration
-func (c Check) Verify(filterOnCheckName string, config Config) (successCount int, failureCount int, err error) {
+func (c *Check) Verify(filterOnCheckName string, config Config) (successCount int, failureCount int, err error) {
 	if filterOnCheckName != c.Name && filterOnCheckName != "" {
 		for _, check := range c.checks {
 			s, f, err := check.Verify(filterOnCheckName, config)
@@ -193,7 +147,7 @@ func (c Check) Verify(filterOnCheckName string, config Config) (successCount int
 	fmt.Printf("Running '%s' verifications...\n", c.Name)
 	runChildChecks := true
 	if c.Run != nil {
-		success, err := c.Run(&c, config)
+		success, err := c.Run(c, config)
 		if err != nil {
 			fmt.Printf("  %s\n", err.Error())
 		}
