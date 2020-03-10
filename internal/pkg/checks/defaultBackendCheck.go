@@ -41,14 +41,14 @@ var singleServiceCheck = &Check{
 
 		a := &AssertionSet{}
 		// Assert the request received from the downstream service
-		a.Equals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-		a.Equals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
-		a.Equals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
-		a.ContainsHeaders(req.Headers, []string{"User-Agent"}, "expected the request headers would contain %s but contained %s")
+		a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+		a.DeepEquals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+		a.DeepEquals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+		a.ContainsHeaders(req.Headers, []string{"User-Agent"})
 		// Assert the downstream service response
-		a.Equals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-		a.Equals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
-		a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"}, "expected the response headers would contain %s but contained %s")
+		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+		a.DeepEquals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
+		a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"})
 
 		if a.Error() == "" {
 			return true, nil

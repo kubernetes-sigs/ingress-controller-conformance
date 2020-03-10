@@ -45,10 +45,8 @@ type Check struct {
 
 // CapturedRequest contains the original HTTP request metadata as received
 // by the echoserver handling the test request.
-// The DownstreamServiceId field contains the TEST_ID environment variable
-// value of the downstream echoserver.
 type CapturedRequest struct {
-	DownstreamServiceId string `json:"testId"`
+	DownstreamServiceId string `json:"testId"` // DownstreamServiceId field contains the TEST_ID environment variable value of the downstream echoserver.
 	Path                string
 	Host                string
 	Method              string

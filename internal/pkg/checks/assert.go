@@ -25,10 +25,13 @@ import (
 // AssertionSet performs checks and accumulates assertion errors
 type AssertionSet []error
 
-// Assert actual and expected parameters are deeply equal
-func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTemplate string) {
+// DeepEquals asserts actual and expected object parameters are deeply equal.
+//
+// The errorTemplate format specifier must include a first %v for the expected value
+// and a second %v for the actual value.
+func (a *AssertionSet) DeepEquals(actual interface{}, expected interface{}, errorTemplate string) {
 	if errorTemplate == "" {
-		errorTemplate = "Expected '%s' but was '%s'"
+		errorTemplate = "expected '%v' but was '%v'"
 	}
 	if !reflect.DeepEqual(expected, actual) {
 		err := fmt.Errorf(errorTemplate, expected, actual)
@@ -36,11 +39,9 @@ func (a *AssertionSet) Equals(actual interface{}, expected interface{}, errorTem
 	}
 }
 
-// Assert the actual headers contains the expected headers key
-func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []string, errorTemplate string) {
-	if errorTemplate == "" {
-		errorTemplate = "Expected to contain '%s' but contained '%s'"
-	}
+// ContainsHeaders asserts the actual headers contains the expected header keys.
+func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []string) {
+	errorTemplate := "expected headers to contain '%v' but contained '%v'"
 	for _, expectedKey := range expected {
 		if actual[expectedKey] == nil {
 			err := fmt.Errorf(errorTemplate, expectedKey, actual)
@@ -49,21 +50,21 @@ func (a *AssertionSet) ContainsHeaders(actual map[string][]string, expected []st
 	}
 }
 
-// Assert the actual headers contains exactly the expected headers key and no more
-func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected []string, errorTemplate string) {
-	a.ContainsHeaders(actual, expected, errorTemplate)
-	if errorTemplate == "" {
-		errorTemplate = "Expected to only contain '%s' but contained '%s'"
-	}
+// ContainsExactHeaders asserts the actual headers contains exactly the expected
+// header keys and nothing more.
+func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected []string) {
+	a.ContainsHeaders(actual, expected)
+	errorTemplate := "expected headers to only contain '%v' but contained '%v'"
 	if len(actual) != len(expected) {
 		err := fmt.Errorf(errorTemplate, expected, actual)
 		*a = append(*a, err)
 	}
 }
 
-func (a *AssertionSet) Error() (err string) {
+func (a *AssertionSet) Error() string {
+	var err string
 	for i, e := range *a {
 		err += fmt.Sprintf("\t%d) Assertion failed: %s\n", i+1, e.Error())
 	}
-	return
+	return err
 }
