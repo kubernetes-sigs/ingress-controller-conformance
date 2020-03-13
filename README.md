@@ -54,6 +54,26 @@ service/single-service created
 deployment.apps/single-service created
 ```
 
+#### Apply
+
+The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
+The "apply" command applies these resources to your Kuberenetes cluster using your `kubectl` current-context.
+
+```
+$ ./ingress-controller-conformance apply
+ingress.networking.k8s.io/host-rules created
+service/host-rules created
+deployment.apps/host-rules created
+ingress.networking.k8s.io/path-rules created
+service/path-rules-foo created
+deployment.apps/path-rules-foo created
+service/path-rules-bar created
+deployment.apps/path-rules-bar created
+ingress.networking.k8s.io/single-service created
+service/single-service created
+deployment.apps/single-service created
+```
+
 #### Context
 
 ```
