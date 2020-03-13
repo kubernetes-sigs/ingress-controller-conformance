@@ -63,10 +63,11 @@ func GetIngressHost(namespace string, ingressName string) (host string, err erro
 			host = ingressInterface.IP
 		}
 		if host == "" {
-			err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no hostname or IP", ingressName)
+			err = fmt.Errorf("ingresses/status/loadBalancer \"%s\" has no hostname or IP", ingressName)
 		}
 	} else {
-		err = fmt.Errorf("ingresses.networking.k8s.io \"%s\" has no load balancer interface", ingressName)
+		err = fmt.Errorf("ingresses/status \"%s\" has no load balancer interface; use '--use-insecure-host' "+
+			"and '--use-secure-host' if this is a limitation from the infrastructure", ingressName)
 	}
 	return
 }

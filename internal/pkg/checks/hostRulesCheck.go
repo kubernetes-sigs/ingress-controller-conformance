@@ -33,6 +33,10 @@ var hostRulesHost string
 var hostRulesCheck = &Check{
 	Name: "host-rules",
 	Run: func(check *Check, config Config) (bool, error) {
+		if config.UseInsecureHost != "" {
+			hostRulesHost = config.UseInsecureHost
+			return true, nil
+		}
 		var err error
 		hostRulesHost, err = k8s.GetIngressHost("default", "host-rules")
 		if err != nil {

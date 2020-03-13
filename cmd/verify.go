@@ -27,7 +27,14 @@ import (
 )
 
 func init() {
-	verifyCmd.Flags().StringVarP(&checkName, "check", "c", "", "Verify only this specified check name.")
+	verifyCmd.Flags().StringVarP(&checkName, "check", "c", "",
+		"verify only this specified check name")
+	verifyCmd.Flags().StringVar(&useInsecureHost, "use-insecure-host", "",
+		"endpoint to use for testing cleartext requests, such as 'localhost:8080', when the Ingress"+
+			" resources cannot be associated with a load balancer interface due to infrastructure restrictions")
+	verifyCmd.Flags().StringVar(&useSecureHost, "use-secure-host", "",
+		"endpoint to use for testing secure/encrypted requests, such as 'localhost:8443', when the Ingress"+
+			" resources cannot be associated with a load balancer interface due to infrastructure restrictions")
 
 	rootCmd.AddCommand(verifyCmd)
 
@@ -48,7 +55,9 @@ func init() {
 }
 
 var (
-	checkName = ""
+	checkName       = ""
+	useInsecureHost = ""
+	useSecureHost   = ""
 )
 
 var verifyCmd = &cobra.Command{
@@ -58,7 +67,10 @@ var verifyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		start := time.Now()
 
-		config := checks.Config{}
+		config := checks.Config{
+			UseInsecureHost: useInsecureHost,
+			UseSecureHost:   useSecureHost,
+		}
 		successCount, failureCount, err := checks.Checks.Verify(checkName, config)
 		if err != nil {
 			fmt.Printf(err.Error())

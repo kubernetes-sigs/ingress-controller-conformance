@@ -29,9 +29,13 @@ var singleServiceCheck = &Check{
 	Name:        "default-backend",
 	Description: "Ingress with a single default backend should send traffic to the correct backend service",
 	Run: func(check *Check, config Config) (bool, error) {
-		host, err := k8s.GetIngressHost("default", "default-backend")
-		if err != nil {
-			return false, err
+		var host = config.UseInsecureHost
+		if host == "" {
+			var err error
+			host, err = k8s.GetIngressHost("default", "default-backend")
+			if err != nil {
+				return false, err
+			}
 		}
 
 		req, res, err := captureRoundTrip(fmt.Sprintf("http://%s", host), "")

@@ -27,6 +27,8 @@ import (
 
 // Config contains test suite configuration fields
 type Config struct {
+	UseInsecureHost string // UseInsecureHost for cleartext requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
+	UseSecureHost   string // UseSecureHost for secure/encrypted requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
 }
 
 // Check represents a test case. Checks are named, and must provide a

@@ -49,6 +49,10 @@ var pathRulesHost string
 var pathRulesCheck = &Check{
 	Name: "path-rules",
 	Run: func(check *Check, config Config) (bool, error) {
+		if config.UseInsecureHost != "" {
+			pathRulesHost = config.UseInsecureHost
+			return true, nil
+		}
 		var err error
 		pathRulesHost, err = k8s.GetIngressHost("default", "path-rules")
 		if err != nil {
