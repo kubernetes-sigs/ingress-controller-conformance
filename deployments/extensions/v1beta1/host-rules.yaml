@@ -1,0 +1,66 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: host-rules
+  annotations:
+    kubernetes.io/ingress.class: ambassador
+spec:
+  rules:
+    - host: foo.bar.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: host-rules-exact
+              servicePort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: host-rules-exact
+spec:
+  selector:
+    app: host-rules-exact
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: host-rules-exact
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: host-rules-exact
+  template:
+    metadata:
+      labels:
+        app: host-rules-exact
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: host-rules-exact
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3

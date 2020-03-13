@@ -1,0 +1,61 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: default-backend
+  annotations:
+    kubernetes.io/ingress.class: ambassador
+spec:
+  backend:
+    serviceName: default-backend
+    servicePort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: default-backend
+spec:
+  selector:
+    app: default-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: default-backend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: default-backend
+  template:
+    metadata:
+      labels:
+        app: default-backend
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: default-backend
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3

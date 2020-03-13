@@ -4,20 +4,9 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: host-rules
-  annotations:
-    kubernetes.io/ingress.class: ambassador
 spec:
+  ingressClassName: conformance
   rules:
-    # Invalid hosts, validated by the api-server:
-    # - host: "*"
-    # - host: hosts with invalid labels are ignored
-    #
-    # "hosts with invalid labels are ignored": a DNS-1123 subdomain must consist
-    #  of lower case alphanumeric characters, '-' or '.', and must start and end
-    #  with an alphanumeric character (e.g. 'example.com', regex used for validation
-    #  is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')
-    #
-
     - host: "*.foo.com"
       http:
         paths:

@@ -1,6 +1,6 @@
 ---
 
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: path-rules
@@ -8,13 +8,6 @@ metadata:
     kubernetes.io/ingress.class: ambassador
 spec:
   rules:
-    # Invalid paths, validated by the api-server:
-    # - path: routes/with/no-leading-slash/are-ignored
-    # - path: ../routes/with/relative-paths/are-ignored
-    #
-    # "must be an absolute path"
-    #
-
     - host: "path-rules"
       http:
         paths:
