@@ -13,6 +13,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/kubectl/pkg/cmd/apply"
+	"k8s.io/kubectl/pkg/cmd/delete"
 	"k8s.io/kubectl/pkg/cmd/util"
 )
 
@@ -65,7 +66,7 @@ func replaceObjectAnnotations(obj v1.Object, kv map[string]string) {
 }
 
 // complete verifies if ApplyOptions are valid and without conflicts by cribbing from (*apply.ApplyOptions)Complete().
-func complete(o *apply.ApplyOptions, f util.Factory) error {
+func completeApply(o *apply.ApplyOptions, f util.Factory) error {
 	var err error
 
 	o.FieldManager = "ingress-controller-conformance"
@@ -133,6 +134,37 @@ func complete(o *apply.ApplyOptions, f util.Factory) error {
 	return nil
 }
 
+func completeDelete(o *delete.DeleteOptions, f util.Factory, kinds string) error {
+	r := f.NewBuilder().
+		Unstructured().
+		ContinueOnError().
+		LabelSelectorParam(o.LabelSelector).
+		FieldSelectorParam(o.FieldSelector).
+		SelectAllParam(o.DeleteAll).
+		AllNamespaces(o.DeleteAllNamespaces).
+		ResourceTypeOrNameArgs(false, []string{kinds}...).RequireObject(false).
+		Flatten().
+		Do()
+	err := r.Err()
+	if err != nil {
+		return err
+	}
+	o.Result = r
+
+	dynamicClient, err := f.DynamicClient()
+	if err != nil {
+		return err
+	}
+	o.DynamicClient = dynamicClient
+
+	o.Mapper, err = f.ToRESTMapper()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply Ingress conformance resources to the current cluster",
@@ -153,10 +185,26 @@ information:
 
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		applyOpts := apply.NewApplyOptions(newStandardIO())
 		getter := k8s.NewClientGetter()
+		factory := util.NewFactory(getter)
 
-		if err := complete(applyOpts, util.NewFactory(getter)); err != nil {
+		fmt.Print("cleaning managed resources from previous run... ")
+
+		deleteOpts := &delete.DeleteOptions{
+			IOStreams:           newStandardIO(),
+			LabelSelector:       "app.kubernetes.io/managed-by=ingress-controller-conformance",
+			DeleteAllNamespaces: true,
+			Cascade:             true,
+		}
+		if err := completeDelete(deleteOpts, factory, "deployments,services,ingresses,ingressclasses"); err != nil {
+			return err
+		}
+		if err := deleteOpts.RunDelete(factory); err != nil {
+			return err
+		}
+
+		applyOpts := apply.NewApplyOptions(newStandardIO())
+		if err := completeApply(applyOpts, factory); err != nil {
 			return err
 		}
 
@@ -235,6 +283,8 @@ spec:
 		applyOpts.SetObjects(infos)
 
 		return applyOpts.Run()
+
+		// TODO: Wait for all deleted resources to be Terminated and newly applied resources to be Running
 	},
 }
 
