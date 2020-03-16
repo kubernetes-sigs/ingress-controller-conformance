@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"bytes"
-	"os"
-
-	"github.com/spf13/cobra"
-
+	"fmt"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/assets"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
+	"github.com/spf13/cobra"
+	"os"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +16,11 @@ import (
 	"k8s.io/kubectl/pkg/cmd/util"
 )
 
-var applyIngressClass string
+var (
+	applyIngressAPIVersion string
+	applyIngressClass      string
+	applyIngressController string
+)
 
 func newStandardIO() genericclioptions.IOStreams {
 	return genericclioptions.IOStreams{
@@ -166,9 +169,28 @@ information:
 
 		// Add all the packaged assets as streams to the
 		// apply Builder.
-		for _, name := range assets.AssetNames() {
-			applyOpts.Builder = applyOpts.Builder.Stream(
-				bytes.NewBuffer(assets.MustAsset(name)), name)
+		dir := fmt.Sprintf("deployments/%s", applyIngressAPIVersion)
+		dirAssets, err := assets.AssetDir(dir)
+		if err != nil {
+			return fmt.Errorf("no assets found for apiVersion %v", applyIngressAPIVersion)
+		}
+		fmt.Printf("applying assets from %s %v\n", dir, dirAssets)
+
+		if applyIngressController != "" {
+			ingressClass := fmt.Sprintf(`apiVersion: networking.k8s.io/v1beta1
+kind: IngressClass
+metadata:
+  name: conformance
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: %v`, applyIngressController)
+			applyOpts.Builder = applyOpts.Builder.Stream(bytes.NewBuffer([]byte(ingressClass)), "IngressClass")
+		}
+
+		for _, name := range dirAssets {
+			buffer := bytes.NewBuffer(assets.MustAsset(dir + "/" + name))
+			applyOpts.Builder = applyOpts.Builder.Stream(buffer, name)
 		}
 
 		// Run the builder.
@@ -215,9 +237,20 @@ information:
 }
 
 func init() {
+	applyCmd.Flags().StringVar(&applyIngressAPIVersion,
+		"api-version", "",
+		"apiVersion of resources to apply [extensions/v1beta1, networking.k8s.io/v1beta1]")
+
 	applyCmd.Flags().StringVar(&applyIngressClass,
 		"ingress-class", "",
-		"Ingress class to set on Ingress resources")
+		"kubernetes.io/ingress.class annotation to set on Ingress resources")
 
+	applyCmd.Flags().StringVar(&applyIngressController,
+		"ingress-controller", "",
+		"inject an IngressClass resource with for a given spec.controller value")
+
+	if err := applyCmd.MarkFlagRequired("api-version"); err != nil {
+		panic(err)
+	}
 	rootCmd.AddCommand(applyCmd)
 }
