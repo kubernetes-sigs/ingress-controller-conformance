@@ -49,14 +49,16 @@ func addObjectLabels(obj v1.Object, kv map[string]string) {
 // addObjectAnnotations adds the given map of key-value pairs to
 // the object as annotations. Any existing annotations for these keys
 // will be overwritten.
-func addObjectAnnotations(obj v1.Object, kv map[string]string) {
+func replaceObjectAnnotations(obj v1.Object, kv map[string]string) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
 
 	for k, v := range kv {
-		annotations[k] = v
+		if annotations[k] != "" {
+			annotations[k] = v
+		}
 	}
 
 	obj.SetAnnotations(annotations)
@@ -223,7 +225,7 @@ spec:
 				}
 
 				if objType.GetKind() == "Ingress" {
-					addObjectAnnotations(obj, map[string]string{
+					replaceObjectAnnotations(obj, map[string]string{
 						"kubernetes.io/ingress.class": applyIngressClass,
 					})
 				}
