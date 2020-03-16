@@ -28,6 +28,10 @@ import (
 )
 
 func init() {
+	// TODO: make use of the --api-version flag
+	verifyCmd.Flags().StringVar(&verifyIngressAPIVersion,
+		"api-version", "",
+		"verify using assertions for the given apiVersion [extensions/v1beta1, networking.k8s.io/v1beta1]")
 	verifyCmd.Flags().StringVarP(&checkName, "check", "c", "",
 		"verify only this specified check name")
 	verifyCmd.Flags().StringVar(&useInsecureHost, "use-insecure-host", "",
@@ -37,6 +41,9 @@ func init() {
 		"endpoint to use for testing secure/encrypted requests, such as 'localhost:8443', when the Ingress"+
 			" resources cannot be associated with a load balancer interface due to infrastructure restrictions")
 
+	if err := verifyCmd.MarkFlagRequired("api-version"); err != nil {
+		panic(err)
+	}
 	rootCmd.AddCommand(verifyCmd)
 
 	_ = message.Set(language.English, "%d success",
@@ -56,9 +63,10 @@ func init() {
 }
 
 var (
-	checkName       = ""
-	useInsecureHost = ""
-	useSecureHost   = ""
+	verifyIngressAPIVersion = ""
+	checkName               = ""
+	useInsecureHost         = ""
+	useSecureHost           = ""
 )
 
 var verifyCmd = &cobra.Command{
