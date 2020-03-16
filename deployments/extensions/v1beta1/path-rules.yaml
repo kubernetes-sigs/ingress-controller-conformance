@@ -5,7 +5,7 @@ kind: Ingress
 metadata:
   name: path-rules
   annotations:
-    kubernetes.io/ingress.class: ambassador
+    kubernetes.io/ingress.class: conformance
 spec:
   rules:
     - host: "path-rules"
