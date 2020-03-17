@@ -66,6 +66,7 @@ func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected
 	}
 }
 
+// String returns the string representation of Assertions for terminal output.
 func (a *Assertions) String() string {
 	var err string
 	for i, e := range a.E {
@@ -77,6 +78,7 @@ func (a *Assertions) String() string {
 	return err
 }
 
+// Passed checks if the the test Assertions should be considered passed (true) or failed (false)
 func (a *Assertions) Passed() bool {
 	if len(a.E) > 0 {
 		return false

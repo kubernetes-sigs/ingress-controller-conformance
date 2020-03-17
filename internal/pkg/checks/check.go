@@ -28,7 +28,7 @@ import (
 
 // Config contains test suite configuration fields
 type Config struct {
-	IngressAPIVersion string // TODO
+	IngressAPIVersion string // IngressAPIVersion for only executing tests which are compatible with this APIVersion.
 	UseInsecureHost   string // UseInsecureHost for cleartext requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
 	UseSecureHost     string // UseSecureHost for secure/encrypted requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
 }
@@ -38,25 +38,26 @@ type Config struct {
 type Check struct {
 	Name        string
 	Description string
-	APIVersions []string // TODO
+	APIVersions []string // APIVersions for which this test is valid/compatible.
 
-	RunRequest *Request
-	Run        func(check *Check, config Config) (success bool, err error)
+	//Specify either one of RunRequest or Run
+	RunRequest *Request                                                    // Given a Request, check assertions without handling the boilerplate of request execution.
+	Run        func(check *Check, config Config) (success bool, err error) // Generic Run function for advanced cases.
 
-	// Child checks
-	checks []*Check
-	// Parent check
-	parent *Check
+	checks []*Check // Child checks
+	parent *Check   // Parent check
 }
 
-// TODO: Docs
+// Request allows defining a making and capturing a single HTTP request and build assertions with DoCheck.
 type Request struct {
 	IngressNamespace string
 	IngressName      string
-	Path             string
-	Hostname         string
-	Insecure         bool
-	DoCheck          func(*CapturedRequest, *CapturedResponse) (*Assertions, error)
+
+	Path     string
+	Hostname string
+	Insecure bool
+
+	DoCheck func(*CapturedRequest, *CapturedResponse) (*Assertions, error) // For a given CapturedRequest and CapturedResponse, check some Assertions.
 }
 
 // CapturedRequest contains the original HTTP request metadata as received
@@ -78,6 +79,7 @@ type CapturedResponse struct {
 	Headers       map[string][]string
 }
 
+// CaptureRoundTrip will perform an HTTP request and return the CapturedRequest and CapturedResponse tuple
 func CaptureRoundTrip(location string, hostOverride string) (*CapturedRequest, *CapturedResponse, error) {
 	tr := &http.Transport{
 		DisableCompression: true,
@@ -172,9 +174,7 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 				if c.RunRequest.IngressNamespace != "" {
 					namespace = c.RunRequest.IngressNamespace
 				}
-				// TODO: handle edgecases
-				ingressName := c.RunRequest.IngressName
-				host, err = k8s.GetIngressHost(namespace, ingressName)
+				host, err = k8s.GetIngressHost(namespace, c.RunRequest.IngressName)
 				if err != nil {
 					return false, err
 				}
