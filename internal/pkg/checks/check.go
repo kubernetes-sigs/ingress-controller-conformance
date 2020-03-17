@@ -64,7 +64,7 @@ type CapturedResponse struct {
 	Headers       map[string][]string
 }
 
-func captureRoundTrip(location string, hostOverride string) (*CapturedRequest, *CapturedResponse, error) {
+func CaptureRoundTrip(location string, hostOverride string) (*CapturedRequest, *CapturedResponse, error) {
 	tr := &http.Transport{
 		DisableCompression: true,
 	}
@@ -104,7 +104,7 @@ func captureRoundTrip(location string, hostOverride string) (*CapturedRequest, *
 }
 
 // Head of Check hierarchy
-var Checks = &Check{
+var AllChecks = &Check{
 	Name: "all",
 }
 

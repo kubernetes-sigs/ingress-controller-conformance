@@ -30,6 +30,6 @@ var listCmd = &cobra.Command{
 	Short: "List all Ingress verifications",
 	Long:  "List all Ingress verifications",
 	Run: func(cmd *cobra.Command, args []string) {
-		checks.Checks.List()
+		checks.AllChecks.List()
 	},
 }

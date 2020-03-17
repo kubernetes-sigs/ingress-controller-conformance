@@ -80,7 +80,7 @@ var verifyCmd = &cobra.Command{
 			UseInsecureHost: useInsecureHost,
 			UseSecureHost:   useSecureHost,
 		}
-		successCount, failureCount, err := checks.Checks.Verify(checkName, config)
+		successCount, failureCount, err := checks.AllChecks.Verify(checkName, config)
 		if err != nil {
 			fmt.Printf(err.Error())
 		}
