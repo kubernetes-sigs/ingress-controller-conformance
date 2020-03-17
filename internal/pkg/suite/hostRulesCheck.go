@@ -17,6 +17,7 @@ limitations under the License.
 package suite
 
 import (
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
 )
 
@@ -36,6 +37,7 @@ var hostRulesCheck = &checks.Check{
 var hostRulesExactMatchCheck = &checks.Check{
 	Name:        "host-rules-exact-match",
 	Description: "Ingress with exact host rule should send traffic to the correct backend service",
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "host-rules",
 		Path:        "",
@@ -57,7 +59,7 @@ var hostRulesExactMatchCheck = &checks.Check{
 var hostRulesWildcardSingleLabelCheck = &checks.Check{
 	Name:        "host-rules-wildcard-single-label",
 	Description: "Ingress with wildcard host rule should match a single label",
-
+	APIVersions: apiversion.NetworkingV1Beta1,
 	RunRequest: &checks.Request{
 		IngressName: "host-rules",
 		Path:        "",
@@ -79,7 +81,7 @@ var hostRulesWildcardSingleLabelCheck = &checks.Check{
 var hostRulesWildcardMultipleLabelsCheck = &checks.Check{
 	Name:        "host-rules-wildcard-multiple-labels",
 	Description: "Ingress with wildcard host rule should only match a single label & fallback to default-backend",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "host-rules",
 		Path:        "",
@@ -101,7 +103,7 @@ var hostRulesWildcardMultipleLabelsCheck = &checks.Check{
 var hostRulesWildcardNoLabelCheck = &checks.Check{
 	Name:        "host-rules-wildcard-no-label",
 	Description: "Ingress with wildcard host rule should match exactly one single label & fallback to default-backend",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "host-rules",
 		Path:        "",

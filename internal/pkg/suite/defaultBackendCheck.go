@@ -17,16 +17,18 @@ limitations under the License.
 package suite
 
 import (
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
 )
 
 func init() {
-	checks.AllChecks.AddCheck(singleServiceCheck)
+	checks.AllChecks.AddCheck(defaultBackendCheck)
 }
 
-var singleServiceCheck = &checks.Check{
+var defaultBackendCheck = &checks.Check{
 	Name:        "default-backend",
 	Description: "Ingress with a single default backend should send traffic to the correct backend service",
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "default-backend",
 		Path:        "",

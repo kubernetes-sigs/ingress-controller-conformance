@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/assets"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
 	"github.com/spf13/cobra"
@@ -291,7 +292,7 @@ spec:
 func init() {
 	applyCmd.Flags().StringVar(&applyIngressAPIVersion,
 		"api-version", "",
-		"apiVersion of resources to apply [extensions/v1beta1, networking.k8s.io/v1beta1]")
+		fmt.Sprintf("apiVersion of resources to apply %s", apiversion.All))
 
 	applyCmd.Flags().StringVar(&applyIngressClass,
 		"ingress-class", "",

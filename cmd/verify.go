@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
 	"github.com/spf13/cobra"
 	"golang.org/x/text/feature/plural"
@@ -28,10 +29,9 @@ import (
 )
 
 func init() {
-	// TODO: make use of the --api-version flag
 	verifyCmd.Flags().StringVar(&verifyIngressAPIVersion,
 		"api-version", "",
-		"verify using assertions for the given apiVersion [extensions/v1beta1, networking.k8s.io/v1beta1]")
+		fmt.Sprintf("verify using assertions for the given apiVersion %s", apiversion.All))
 	verifyCmd.Flags().StringVarP(&checkName, "check", "c", "",
 		"verify only this specified check name")
 	verifyCmd.Flags().StringVar(&useInsecureHost, "use-insecure-host", "",
@@ -77,8 +77,9 @@ var verifyCmd = &cobra.Command{
 		start := time.Now()
 
 		config := checks.Config{
-			UseInsecureHost: useInsecureHost,
-			UseSecureHost:   useSecureHost,
+			IngressAPIVersion: verifyIngressAPIVersion,
+			UseInsecureHost:   useInsecureHost,
+			UseSecureHost:     useSecureHost,
 		}
 		successCount, failureCount, err := checks.AllChecks.Verify(checkName, config)
 		if err != nil {

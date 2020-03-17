@@ -28,8 +28,9 @@ import (
 
 // Config contains test suite configuration fields
 type Config struct {
-	UseInsecureHost string // UseInsecureHost for cleartext requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
-	UseSecureHost   string // UseSecureHost for secure/encrypted requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
+	IngressAPIVersion string // TODO
+	UseInsecureHost   string // UseInsecureHost for cleartext requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
+	UseSecureHost     string // UseSecureHost for secure/encrypted requests when the infrastructure under test does not allow for auto-detecting the public IP associated with the Ingress resources.
 }
 
 // Check represents a test case. Checks are named, and must provide a
@@ -37,6 +38,7 @@ type Config struct {
 type Check struct {
 	Name        string
 	Description string
+	APIVersions []string // TODO
 
 	RunRequest *Request
 	Run        func(check *Check, config Config) (success bool, err error)
@@ -186,13 +188,22 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 			assertions, err := c.RunRequest.DoCheck(req, res)
 
 			fmt.Print(assertions)
-			return assertions.Passed(), nil
+			return assertions != nil && assertions.Passed(), nil
 		}
+	}
+
+	isAPIVersionCompatible := func() bool {
+		for _, v := range c.APIVersions {
+			if v == config.IngressAPIVersion {
+				return true
+			}
+		}
+		return false
 	}
 
 	fmt.Printf("Running '%s' verifications...\n", c.Name)
 	runChildChecks := true
-	if c.Run != nil {
+	if c.Run != nil && isAPIVersionCompatible() {
 		success, err := c.Run(c, config)
 		if err != nil {
 			fmt.Printf("  %s\n", err.Error())

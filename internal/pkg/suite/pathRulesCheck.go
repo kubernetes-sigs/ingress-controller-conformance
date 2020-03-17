@@ -17,6 +17,7 @@ limitations under the License.
 package suite
 
 import (
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
 )
 
@@ -62,6 +63,7 @@ var pathRulesPrefixCheck = &checks.Check{
 var pathRulesPrefixAllPathsCheck = &checks.Check{
 	Name:        "path-rules-prefix-all-paths",
 	Description: "Ingress with prefix path rule '/' should match all paths",
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "",
@@ -83,7 +85,7 @@ var pathRulesPrefixAllPathsCheck = &checks.Check{
 var pathRulesPrefixFooCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo",
 	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/foo",
@@ -105,7 +107,7 @@ var pathRulesPrefixFooCheck = &checks.Check{
 var pathRulesPrefixFooSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo-slash",
 	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo/)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/foo/",
@@ -127,7 +129,7 @@ var pathRulesPrefixFooSlashCheck = &checks.Check{
 var pathRulesPrefixFoCheck = &checks.Check{
 	Name:        "path-rules-prefix-fo",
 	Description: "Ingress with prefix path rule without a trailing slash should not match partial paths (/foo does not match /fo)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/fo",
@@ -149,7 +151,7 @@ var pathRulesPrefixFoCheck = &checks.Check{
 var pathRulesPrefixAaaBbbCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb",
 	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/aaa/bbb",
@@ -171,7 +173,7 @@ var pathRulesPrefixAaaBbbCheck = &checks.Check{
 var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-slash",
 	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/aaa/bbb/",
@@ -193,7 +195,7 @@ var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 var pathRulesPrefixAaaBbbCccCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-ccc",
 	Description: "Ingress with prefix path rule with a trailing slash should match subpath, send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/ccc)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/aaa/bbb/ccc",
@@ -215,7 +217,7 @@ var pathRulesPrefixAaaBbbCccCheck = &checks.Check{
 var pathRulesPrefixAaaBbbcccCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbbccc",
 	Description: "Ingress with prefix path rule with a trailing slash should not match string prefix (/aaa/bbb/ does not match /aaa/bbbccc)",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/aaa/bbbccc",
@@ -237,7 +239,7 @@ var pathRulesPrefixAaaBbbcccCheck = &checks.Check{
 var pathRulesPrefixConsecutiveSlashesCheck = &checks.Check{
 	Name:        "path-rules-prefix-consecutive-slashes",
 	Description: "Ingress with prefix path rule with consecutive slashes are ignored",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/routes/with/consecutive//slashes///are-ignored",
@@ -259,7 +261,7 @@ var pathRulesPrefixConsecutiveSlashesCheck = &checks.Check{
 var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &checks.Check{
 	Name:        "path-rules-prefix-consecutive-slashes-normalized",
 	Description: "Ingress with prefix path rule with consecutive slashes are ignored with normalized request",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/routes/with/consecutive/slashes/are-ignored",
@@ -281,7 +283,7 @@ var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &checks.Check{
 var pathRulesPrefixInvalidCharactersCheck = &checks.Check{
 	Name:        "path-rules-prefix-invalid-characters",
 	Description: "Ingress with prefix path rule with invalid characters are ignored",
-
+	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/routes with invalid characters are ignored!",
