@@ -48,16 +48,16 @@ func init() {
 
 	_ = message.Set(language.English, "%d success",
 		plural.Selectf(1, "%d",
-			"=0", "No checks passed...",
-			"=1", "1 check passed,",
-			"other", "%d checks passed!",
+			"=0", "\033[1;36mNo checks passed...\033[0m",
+			"=1", "\033[1;34m1 check passed,\033[0m",
+			"other", "\033[1;34m%d checks passed!\033[0m",
 		),
 	)
 	_ = message.Set(language.English, "%d failure",
 		plural.Selectf(1, "%d",
-			"=0", "No failures!",
-			"=1", "1 failure",
-			"other", "%d failures!",
+			"=0", "\033[1;34mNo failures!\033[0m",
+			"=1", "\033[1;31m1 failure\033[0m",
+			"other", "\033[1;31m%d failures!\033[0m",
 		),
 	)
 }
@@ -89,7 +89,7 @@ var verifyCmd = &cobra.Command{
 		elapsed := time.Since(start)
 
 		p := message.NewPrinter(language.English)
-		fmt.Printf("--- Verification completed ---\n%s %s\nin %s\n",
+		fmt.Printf("\n--- Verification completed ---\n%s %s\nin %s\n",
 			p.Sprintf("%d success", successCount),
 			p.Sprintf("%d failure", failureCount),
 			elapsed)

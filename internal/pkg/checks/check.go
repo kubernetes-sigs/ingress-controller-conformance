@@ -206,7 +206,7 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 	if c.Run != nil && isAPIVersionCompatible() {
 		success, err := c.Run(c, config)
 		if err != nil {
-			fmt.Printf("  %s\n", err.Error())
+			fmt.Printf("\t%s\n", err.Error())
 		}
 
 		if success {
@@ -214,7 +214,7 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 		} else {
 			failureCount++
 			runChildChecks = false
-			fmt.Printf("  Check failed: %s\n", c.Name)
+			fmt.Printf("\t\033[1;31mCheck failed:\033[0m %s\n", c.Name)
 		}
 	}
 

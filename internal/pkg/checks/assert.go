@@ -69,11 +69,11 @@ func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected
 // String returns the string representation of Assertions for terminal output.
 func (a *Assertions) String() string {
 	var err string
-	for i, e := range a.E {
-		err += fmt.Sprintf("\tERROR %d) Assertion failed: %s\n", i+1, e.Error())
+	for _, e := range a.E {
+		err += fmt.Sprintf("\t\033[1;31mERROR\033[0m Assertion failed: %s\n", e.Error())
 	}
-	for i, w := range a.W {
-		err += fmt.Sprintf("\tWARN  %d) Assertion failed: %s\n", i+1, w.Error())
+	for _, w := range a.W {
+		err += fmt.Sprintf("\t\033[1;33mWARN \033[0m Assertion failed: %s\n", w.Error())
 	}
 	return err
 }
