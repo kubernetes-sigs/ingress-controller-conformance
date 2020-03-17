@@ -30,7 +30,7 @@ var singleServiceCheck = &checks.Check{
 	RunRequest: &checks.Request{
 		IngressName: "default-backend",
 		Path:        "",
-		Host:        "",
+		Hostname:    "",
 		Insecure:    true,
 		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
 			a := &checks.AssertionSet{}

@@ -52,7 +52,7 @@ type Request struct {
 	IngressNamespace string
 	IngressName      string
 	Path             string
-	Host             string
+	Hostname         string
 	Insecure         bool
 	DoCheck          func(*CapturedRequest, *CapturedResponse) (*AssertionSet, error)
 }
@@ -178,7 +178,8 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 				}
 			}
 
-			req, res, err := CaptureRoundTrip(fmt.Sprintf("%s://%s", scheme, host), c.RunRequest.Host)
+			location := fmt.Sprintf("%s://%s%s", scheme, host, c.RunRequest.Path)
+			req, res, err := CaptureRoundTrip(location, c.RunRequest.Hostname)
 			if err != nil {
 				return false, err
 			}

@@ -17,9 +17,7 @@ limitations under the License.
 package suite
 
 import (
-	"fmt"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
 )
 
 func init() {
@@ -46,21 +44,9 @@ func init() {
 	checks.AllChecks.AddCheck(pathRulesCheck)
 }
 
-var pathRulesHost string
+// placeholder check for the path-rules checks hierarchy
 var pathRulesCheck = &checks.Check{
 	Name: "path-rules",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		if config.UseInsecureHost != "" {
-			pathRulesHost = config.UseInsecureHost
-			return true, nil
-		}
-		var err error
-		pathRulesHost, err = k8s.GetIngressHost("default", "path-rules")
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	},
 }
 
 // placeholder check for dividing the pathRulesCheck into a distinct hierarchy for Exact path tests
@@ -76,274 +62,240 @@ var pathRulesPrefixCheck = &checks.Check{
 var pathRulesPrefixAllPathsCheck = &checks.Check{
 	Name:        "path-rules-prefix-all-paths",
 	Description: "Ingress with prefix path rule '/' should match all paths",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixFooCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo",
 	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/foo", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/foo",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixFooSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo-slash",
 	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo/)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/foo/", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/foo/",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixFoCheck = &checks.Check{
 	Name:        "path-rules-prefix-fo",
 	Description: "Ingress with prefix path rule without a trailing slash should not match partial paths (/foo does not match /fo)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/fo", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/fo",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixAaaBbbCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb",
 	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/aaa/bbb", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/aaa/bbb",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-slash",
 	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/aaa/bbb/", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/aaa/bbb/",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixAaaBbbCccCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-ccc",
 	Description: "Ingress with prefix path rule with a trailing slash should match subpath, send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/ccc)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/aaa/bbb/ccc", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/aaa/bbb/ccc",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixAaaBbbcccCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbbccc",
 	Description: "Ingress with prefix path rule with a trailing slash should not match string prefix (/aaa/bbb/ does not match /aaa/bbbccc)",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/aaa/bbbccc", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/aaa/bbbccc",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixConsecutiveSlashesCheck = &checks.Check{
 	Name:        "path-rules-prefix-consecutive-slashes",
 	Description: "Ingress with prefix path rule with consecutive slashes are ignored",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/routes/with/consecutive//slashes///are-ignored", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/routes/with/consecutive//slashes///are-ignored",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &checks.Check{
 	Name:        "path-rules-prefix-consecutive-slashes-normalized",
 	Description: "Ingress with prefix path rule with consecutive slashes are ignored with normalized request",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/routes/with/consecutive/slashes/are-ignored", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/routes/with/consecutive/slashes/are-ignored",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
 
 var pathRulesPrefixInvalidCharactersCheck = &checks.Check{
 	Name:        "path-rules-prefix-invalid-characters",
 	Description: "Ingress with prefix path rule with invalid characters are ignored",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s/routes with invalid characters are ignored!", pathRulesHost), "path-rules")
-		if err != nil {
-			return false, err
-		}
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/routes with invalid characters are ignored!",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
+			// Assert the request received from the downstream service
+			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }
