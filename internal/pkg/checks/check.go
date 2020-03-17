@@ -20,6 +20,7 @@ package checks
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -37,12 +38,23 @@ type Check struct {
 	Name        string
 	Description string
 
-	Run func(check *Check, config Config) (success bool, err error)
+	RunRequest *Request
+	Run        func(check *Check, config Config) (success bool, err error)
 
 	// Child checks
 	checks []*Check
 	// Parent check
 	parent *Check
+}
+
+// TODO: Docs
+type Request struct {
+	IngressNamespace string
+	IngressName      string
+	Path             string
+	Host             string
+	Insecure         bool
+	DoCheck          func(*CapturedRequest, *CapturedResponse) (*AssertionSet, error)
 }
 
 // CapturedRequest contains the original HTTP request metadata as received
@@ -142,6 +154,43 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 		}
 
 		return
+	}
+
+	if c.Run == nil && c.RunRequest != nil {
+		c.Run = func(check *Check, config Config) (bool, error) {
+			var scheme = "https"
+			var host = config.UseSecureHost
+			if c.RunRequest.Insecure {
+				scheme = "http"
+				host = config.UseInsecureHost
+			}
+			if host == "" {
+				var err error
+				namespace := "default"
+				if c.RunRequest.IngressNamespace != "" {
+					namespace = c.RunRequest.IngressNamespace
+				}
+				// TODO: handle edgecases
+				ingressName := c.RunRequest.IngressName
+				host, err = k8s.GetIngressHost(namespace, ingressName)
+				if err != nil {
+					return false, err
+				}
+			}
+
+			req, res, err := CaptureRoundTrip(fmt.Sprintf("%s://%s", scheme, host), c.RunRequest.Host)
+			if err != nil {
+				return false, err
+			}
+			assertionSet, err := c.RunRequest.DoCheck(req, res)
+
+			if assertionSet.Error() == "" {
+				return true, nil
+			} else {
+				fmt.Print(assertionSet)
+			}
+			return false, nil
+		}
 	}
 
 	fmt.Printf("Running '%s' verifications...\n", c.Name)

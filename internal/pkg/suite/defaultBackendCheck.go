@@ -17,9 +17,7 @@ limitations under the License.
 package suite
 
 import (
-	"fmt"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
 )
 
 func init() {
@@ -29,37 +27,24 @@ func init() {
 var singleServiceCheck = &checks.Check{
 	Name:        "default-backend",
 	Description: "Ingress with a single default backend should send traffic to the correct backend service",
-	Run: func(check *checks.Check, config checks.Config) (bool, error) {
-		var host = config.UseInsecureHost
-		if host == "" {
-			var err error
-			host, err = k8s.GetIngressHost("default", "default-backend")
-			if err != nil {
-				return false, err
-			}
-		}
+	RunRequest: &checks.Request{
+		IngressName: "default-backend",
+		Path:        "",
+		Host:        "",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
+			a := &checks.AssertionSet{}
 
-		req, res, err := checks.CaptureRoundTrip(fmt.Sprintf("http://%s", host), "")
-		if err != nil {
-			return false, err
-		}
+			a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+			a.DeepEquals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+			a.DeepEquals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+			a.ContainsHeaders(req.Headers, []string{"User-Agent"})
+			// Assert the downstream service response
+			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.DeepEquals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
+			a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"})
 
-		a := &checks.AssertionSet{}
-		// Assert the request received from the downstream service
-		a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-		a.DeepEquals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
-		a.DeepEquals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
-		a.ContainsHeaders(req.Headers, []string{"User-Agent"})
-		// Assert the downstream service response
-		a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-		a.DeepEquals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
-		a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"})
-
-		if a.Error() == "" {
-			return true, nil
-		} else {
-			fmt.Print(a)
-		}
-		return false, nil
+			return a, nil
+		},
 	},
 }

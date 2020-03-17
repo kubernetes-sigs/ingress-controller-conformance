@@ -19,6 +19,7 @@ package cmd
 import (
 	"os"
 
+	_ "github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/suite"
 	"github.com/spf13/cobra"
 )
 
