@@ -41,13 +41,13 @@ var hostRulesExactMatchCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "foo.bar.com",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "host-rules-exact", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Host, "foo.bar.com", "expected the request host would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "host-rules-exact", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Host, "foo.bar.com", "expected the request host would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -63,13 +63,13 @@ var hostRulesWildcardSingleLabelCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "wildcard.foo.com",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "host-rules-wildcard", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Host, "wildcard.foo.com", "expected the request host would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "host-rules-wildcard", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Host, "wildcard.foo.com", "expected the request host would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -85,13 +85,13 @@ var hostRulesWildcardMultipleLabelsCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "aaa.bbb.foo.com",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Host, "aaa.bbb.foo.com", "expected the request host would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Host, "aaa.bbb.foo.com", "expected the request host would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -107,13 +107,13 @@ var hostRulesWildcardNoLabelCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "foo.com",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Host, "foo.com", "expected the request host would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Host, "foo.com", "expected the request host would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},

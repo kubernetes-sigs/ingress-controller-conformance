@@ -32,17 +32,17 @@ var singleServiceCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 
-			a.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
-			a.DeepEquals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
-			a.ContainsHeaders(req.Headers, []string{"User-Agent"})
+			a.E.DeepEquals(req.DownstreamServiceId, "default-backend", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Method, "GET", "expected the originating request method would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Proto, "HTTP/1.1", "expected the originating request protocol would be '%s' but was '%s'")
+			a.W.ContainsHeaders(req.Headers, []string{"User-Agent"})
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
-			a.DeepEquals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
-			a.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"})
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.Proto, "HTTP/1.1", "expected the response protocol would be %s but was %s")
+			a.W.ContainsExactHeaders(res.Headers, []string{"Content-Length", "Content-Type", "Date", "Server"})
 
 			return a, nil
 		},

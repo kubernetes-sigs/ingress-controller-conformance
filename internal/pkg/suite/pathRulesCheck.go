@@ -67,13 +67,13 @@ var pathRulesPrefixAllPathsCheck = &checks.Check{
 		Path:        "",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.E.DeepEquals(req.Path, "/", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -89,13 +89,13 @@ var pathRulesPrefixFooCheck = &checks.Check{
 		Path:        "/foo",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -111,13 +111,13 @@ var pathRulesPrefixFooSlashCheck = &checks.Check{
 		Path:        "/foo/",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -133,13 +133,13 @@ var pathRulesPrefixFoCheck = &checks.Check{
 		Path:        "/fo",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/fo", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -155,13 +155,13 @@ var pathRulesPrefixAaaBbbCheck = &checks.Check{
 		Path:        "/aaa/bbb",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/aaa/bbb", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -177,13 +177,13 @@ var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 		Path:        "/aaa/bbb/",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/aaa/bbb/", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -199,13 +199,13 @@ var pathRulesPrefixAaaBbbCccCheck = &checks.Check{
 		Path:        "/aaa/bbb/ccc",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-aaa-bbb", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/aaa/bbb/ccc", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -221,13 +221,13 @@ var pathRulesPrefixAaaBbbcccCheck = &checks.Check{
 		Path:        "/aaa/bbbccc",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/aaa/bbbccc", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -243,13 +243,13 @@ var pathRulesPrefixConsecutiveSlashesCheck = &checks.Check{
 		Path:        "/routes/with/consecutive//slashes///are-ignored",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/routes/with/consecutive//slashes///are-ignored", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -265,13 +265,13 @@ var pathRulesPrefixConsecutiveSlashesNormalizedCheck = &checks.Check{
 		Path:        "/routes/with/consecutive/slashes/are-ignored",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/routes/with/consecutive/slashes/are-ignored", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},
@@ -287,13 +287,13 @@ var pathRulesPrefixInvalidCharactersCheck = &checks.Check{
 		Path:        "/routes with invalid characters are ignored!",
 		Hostname:    "path-rules",
 		Insecure:    true,
-		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.AssertionSet, error) {
-			a := &checks.AssertionSet{}
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
 			// Assert the request received from the downstream service
-			a.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
-			a.DeepEquals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/routes%20with%20invalid%20characters%20are%20ignored%21", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
-			a.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
 			return a, nil
 		},

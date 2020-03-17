@@ -23,6 +23,11 @@ import (
 )
 
 // AssertionSet performs checks and accumulates assertion errors
+
+type Assertions struct {
+	E AssertionSet
+	W AssertionSet
+}
 type AssertionSet []error
 
 // DeepEquals asserts actual and expected object parameters are deeply equal.
@@ -61,10 +66,20 @@ func (a *AssertionSet) ContainsExactHeaders(actual map[string][]string, expected
 	}
 }
 
-func (a *AssertionSet) Error() string {
+func (a *Assertions) String() string {
 	var err string
-	for i, e := range *a {
-		err += fmt.Sprintf("\t%d) Assertion failed: %s\n", i+1, e.Error())
+	for i, e := range a.E {
+		err += fmt.Sprintf("\tERROR %d) Assertion failed: %s\n", i+1, e.Error())
+	}
+	for i, w := range a.W {
+		err += fmt.Sprintf("\tWARN  %d) Assertion failed: %s\n", i+1, w.Error())
 	}
 	return err
+}
+
+func (a *Assertions) Passed() bool {
+	if len(a.E) > 0 {
+		return false
+	}
+	return true
 }

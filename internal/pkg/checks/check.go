@@ -54,7 +54,7 @@ type Request struct {
 	Path             string
 	Hostname         string
 	Insecure         bool
-	DoCheck          func(*CapturedRequest, *CapturedResponse) (*AssertionSet, error)
+	DoCheck          func(*CapturedRequest, *CapturedResponse) (*Assertions, error)
 }
 
 // CapturedRequest contains the original HTTP request metadata as received
@@ -183,14 +183,10 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 			if err != nil {
 				return false, err
 			}
-			assertionSet, err := c.RunRequest.DoCheck(req, res)
+			assertions, err := c.RunRequest.DoCheck(req, res)
 
-			if assertionSet.Error() == "" {
-				return true, nil
-			} else {
-				fmt.Print(assertionSet)
-			}
-			return false, nil
+			fmt.Print(assertions)
+			return assertions.Passed(), nil
 		}
 	}
 
