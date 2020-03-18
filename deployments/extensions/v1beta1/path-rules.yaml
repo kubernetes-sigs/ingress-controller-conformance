@@ -11,6 +11,10 @@ spec:
     - host: "path-rules"
       http:
         paths:
+          # In extensions/v1beta1, Path is an extended POSIX regex as defined by IEEE Std 1003.1
+          # However, this is not consistent with the syntax supported by any of the common proxy vendors.
+          # It is also the case that k8s documentation (and most Ingress providers) treats the path match as a prefix match.
+
           - path: /foo
             backend:
               serviceName: path-rules-foo

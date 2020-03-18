@@ -8,11 +8,11 @@ metadata:
     kubernetes.io/ingress.class: conformance
 spec:
   rules:
+      # The extensions/v1beta1 spec states that spec.rules.host must be an exact FQDN match of a network host.
     - host: foo.bar.com
       http:
         paths:
-          - path: /
-            backend:
+          - backend:
               serviceName: host-rules-exact
               servicePort: 80
 

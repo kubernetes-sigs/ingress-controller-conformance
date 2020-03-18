@@ -22,17 +22,17 @@ import (
 )
 
 func init() {
-	/*
-			TODO: There are currently no 'exact' path types validations since it is unsupported in v1beta1
-		          For now, we validate only the 'prefix' path types, which is closer to the v1beta1 'prefix'
-		          path type assumption.
-	*/
+	pathRulesExactCheck.AddCheck(pathRulesExactFooCheck)
+	pathRulesExactCheck.AddCheck(pathRulesExactBarCheck)
+	pathRulesExactCheck.AddCheck(pathRulesExactBarNoSlashCheck)
+	pathRulesExactCheck.AddCheck(pathRulesExactBarAaaCheck)
 	pathRulesCheck.AddCheck(pathRulesExactCheck)
 
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAllPathsCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooSlashCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFoCheck)
+	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooxyzCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbSlashCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbCccCheck)
@@ -53,6 +53,94 @@ var pathRulesCheck = &checks.Check{
 // placeholder check for dividing the pathRulesCheck into a distinct hierarchy for Exact path tests
 var pathRulesExactCheck = &checks.Check{
 	Name: "path-rules-exact",
+}
+
+var pathRulesExactFooCheck = &checks.Check{
+	Name:        "path-rules-exact-foo",
+	Description: "Ingress with exact path rule is preferred to prefix match and should send traffic to the correct backend service (/foo matches /foo)",
+	APIVersions: apiversion.NetworkingV1Beta1,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/foo",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-exact", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
+var pathRulesExactBarCheck = &checks.Check{
+	Name:        "path-rules-exact-bar",
+	Description: "Ingress with exact path rule should send traffic to the correct backend service (/bar/ matches /bar/)",
+	APIVersions: apiversion.NetworkingV1Beta1,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/bar/",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-exact", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/bar/", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
+var pathRulesExactBarNoSlashCheck = &checks.Check{
+	Name:        "path-rules-exact-bar-no-slash",
+	Description: "Ingress with exact path rule should not match partial paths (/bar/ does not match /bar)",
+	APIVersions: apiversion.NetworkingV1Beta1,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/bar",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/bar", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
+var pathRulesExactBarAaaCheck = &checks.Check{
+	Name:        "path-rules-exact-bar-aaa",
+	Description: "Ingress with exact path rule should not match partial paths (/bar/ does not match /bar/aaa)",
+	APIVersions: apiversion.NetworkingV1Beta1,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/bar/aaa",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/bar/aaa", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
 }
 
 // placeholder check for dividing the pathRulesCheck into a distinct hierarchy for Prefix path tests
@@ -84,8 +172,8 @@ var pathRulesPrefixAllPathsCheck = &checks.Check{
 
 var pathRulesPrefixFooCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo",
-	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo)",
-	APIVersions: apiversion.All,
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service (/foo matches /foo)",
+	APIVersions: apiversion.ExtensionsV1Beta1,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
 		Path:        "/foo",
@@ -106,7 +194,7 @@ var pathRulesPrefixFooCheck = &checks.Check{
 
 var pathRulesPrefixFooSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-foo-slash",
-	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service, and preserve the original request path (/foo matches /foo/)",
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service (/foo matches /foo/)",
 	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
@@ -128,7 +216,7 @@ var pathRulesPrefixFooSlashCheck = &checks.Check{
 
 var pathRulesPrefixFoCheck = &checks.Check{
 	Name:        "path-rules-prefix-fo",
-	Description: "Ingress with prefix path rule without a trailing slash should not match partial paths (/foo does not match /fo)",
+	Description: "Ingress with prefix path rule should not match partial paths (/foo does not match /fo)",
 	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
@@ -148,9 +236,31 @@ var pathRulesPrefixFoCheck = &checks.Check{
 	},
 }
 
+var pathRulesPrefixFooxyzCheck = &checks.Check{
+	Name:        "path-rules-prefix-fooxyz",
+	Description: "Ingress with prefix path rule should not match string prefixes (/foo does not match /fooxyz)",
+	APIVersions: apiversion.All,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/fooxyz",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/fooxyz", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
 var pathRulesPrefixAaaBbbCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb",
-	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb)",
+	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service (/aaa/bbb/ matches /aaa/bbb)",
 	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
@@ -172,7 +282,7 @@ var pathRulesPrefixAaaBbbCheck = &checks.Check{
 
 var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-slash",
-	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/)",
+	Description: "Ingress with prefix path rule with a trailing slash should send traffic to the correct backend service (/aaa/bbb/ matches /aaa/bbb/)",
 	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",
@@ -194,7 +304,7 @@ var pathRulesPrefixAaaBbbSlashCheck = &checks.Check{
 
 var pathRulesPrefixAaaBbbCccCheck = &checks.Check{
 	Name:        "path-rules-prefix-aaa-bbb-ccc",
-	Description: "Ingress with prefix path rule with a trailing slash should match subpath, send traffic to the correct backend service, and preserve the original request path (/aaa/bbb/ matches /aaa/bbb/ccc)",
+	Description: "Ingress with prefix path rule with a trailing slash should match subpath, send traffic to the correct backend service (/aaa/bbb/ matches /aaa/bbb/ccc)",
 	APIVersions: apiversion.All,
 	RunRequest: &checks.Request{
 		IngressName: "path-rules",

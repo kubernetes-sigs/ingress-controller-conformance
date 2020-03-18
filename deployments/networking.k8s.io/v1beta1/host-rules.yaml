@@ -18,8 +18,7 @@ spec:
     - host: foo.bar.com
       http:
         paths:
-          - path: /
-            backend:
+          - backend:
               serviceName: host-rules-exact
               servicePort: 80
 
