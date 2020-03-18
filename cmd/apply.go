@@ -197,11 +197,19 @@ information:
 			DeleteAllNamespaces: true,
 			Cascade:             true,
 		}
-		if err := completeDelete(deleteOpts, factory, "deployments,services,ingresses,ingressclasses"); err != nil {
+		// Attempt to delete managed resources
+		if err := completeDelete(deleteOpts, factory, "deployments,services,ingresses"); err != nil {
 			return err
 		}
 		if err := deleteOpts.RunDelete(factory); err != nil {
 			return err
+		}
+
+		// Attempt to delete managed ingresclasses, but don't fail if this cluster does not have this resource type
+		if err := completeDelete(deleteOpts, factory, "ingressclasses"); err != nil {
+			fmt.Println(err)
+		} else if err := deleteOpts.RunDelete(factory); err != nil {
+			fmt.Println(err)
 		}
 
 		applyOpts := apply.NewApplyOptions(newStandardIO())
