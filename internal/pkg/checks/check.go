@@ -138,7 +138,7 @@ func (c *Check) AddCheck(checks ...*Check) {
 // List this check and its child's description
 func (c *Check) List() {
 	if c.Description != "" {
-		fmt.Printf("- %s [%s]\n", c.Description, c.Name)
+		fmt.Printf("- %s %v\n\t%s\n", c.Name, c.APIVersions, c.Description)
 	}
 	for _, check := range c.checks {
 		check.List()
@@ -201,9 +201,9 @@ func (c *Check) Verify(filterOnCheckName string, config Config) (successCount in
 		return false
 	}
 
-	fmt.Printf("Running '%s' verifications...\n", c.Name)
 	runChildChecks := true
 	if c.Run != nil && isAPIVersionCompatible() {
+		fmt.Printf("Running '%s' verifications...\n", c.Name)
 		success, err := c.Run(c, config)
 		if err != nil {
 			fmt.Printf("\t%s\n", err.Error())
