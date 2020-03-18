@@ -89,7 +89,8 @@ var verifyCmd = &cobra.Command{
 		elapsed := time.Since(start)
 
 		p := message.NewPrinter(language.English)
-		fmt.Printf("\n--- Verification completed ---\n%s %s\nin %s\n",
+		fmt.Printf("\n--- Verification completed ---\nAPIVersion: %s\n%s %s\nin %s\n",
+			verifyIngressAPIVersion,
 			p.Sprintf("%d success", successCount),
 			p.Sprintf("%d failure", failureCount),
 			elapsed)
