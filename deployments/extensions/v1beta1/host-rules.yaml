@@ -7,6 +7,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: conformance
 spec:
+  tls:
+    - secretName: conformance-tls
   rules:
       # The extensions/v1beta1 spec states that spec.rules.host must be an exact FQDN match of a network host.
     - host: foo.bar.com

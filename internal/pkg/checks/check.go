@@ -18,6 +18,8 @@ limitations under the License.
 package checks
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
@@ -83,6 +85,23 @@ type CapturedResponse struct {
 func CaptureRoundTrip(location string, hostOverride string) (*CapturedRequest, *CapturedResponse, error) {
 	tr := &http.Transport{
 		DisableCompression: true,
+		TLSClientConfig: &tls.Config{
+			// Skip all usual TLS verifications, since we are using a self-signed certificate.
+			InsecureSkipVerify: true,
+			VerifyPeerCertificate: func(certificates [][]byte, _ [][]*x509.Certificate) error {
+				certs := make([]*x509.Certificate, len(certificates))
+				for i, asn1Data := range certificates {
+					cert, err := x509.ParseCertificate(asn1Data)
+					if err != nil {
+						return fmt.Errorf("tls: failed to parse certificate from server: " + err.Error())
+					}
+					certs[i] = cert
+				}
+
+				// Verify the certificate Hostname matches the request hostname.
+				return certs[0].VerifyHostname(hostOverride)
+			},
+		},
 	}
 	client := &http.Client{
 		Transport: tr,

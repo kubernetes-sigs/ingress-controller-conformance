@@ -6,6 +6,10 @@ metadata:
   name: host-rules
 spec:
   ingressClassName: conformance
+  tls:
+    - hosts:
+        - foo.bar.com
+      secretName: conformance-tls
   rules:
     - host: "*.foo.com"
       http:

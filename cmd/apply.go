@@ -198,7 +198,7 @@ information:
 			Cascade:             true,
 		}
 		// Attempt to delete managed resources
-		if err := completeDelete(deleteOpts, factory, "deployments,services,ingresses"); err != nil {
+		if err := completeDelete(deleteOpts, factory, "deployments,services,ingresses,secrets"); err != nil {
 			return err
 		}
 		if err := deleteOpts.RunDelete(factory); err != nil {
