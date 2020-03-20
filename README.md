@@ -4,22 +4,21 @@ The goal of this project is to act as an executable specification in the form of
 
 The conformance test suite will both ensure consistency across implementations, as well as simplify the work needed for other implementations to conform to the specification. The test suite can also be viewed through human readable descriptions of what it is testing so that implementers can understand the tests without reading source code.
 
-Currently, the `ingress-controller-conformance` supports the `Ingress` resource from [`networking.k8s.io/v1beta1` API](https://kubernetes.io/docs/concepts/services-networking/ingress/), with the desire to serve as a benchmark for the Ingress resource under the [`networking.k8s.io/v1` API](https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190125-ingress-api-group.md) and the [Ingress/Service V2 evolution](https://kubernetes-sigs.github.io/service-apis/) proposals.
+Currently, the `ingress-controller-conformance` supports the `Ingress` resource from [`extensions/v1beta1` and `networking.k8s.io/v1beta1` API](https://kubernetes.io/docs/concepts/services-networking/ingress/), with the desire to serve as a benchmark for the Ingress resource under the [`networking.k8s.io/v1` API](https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190125-ingress-api-group.md) and the [Ingress/Service V2 evolution](https://kubernetes-sigs.github.io/service-apis/) proposals.
 
 ## Coverage
 
 The current suite of implemented tests covers the following features of the `Ingress` resource:
 - Plain text HTTP/1.1 requests
+- Secure TLS HTTP/1.1 requests
 - Exact and wildcard Host rules
-- Prefix path matches rules
+- Exact and Prefix path matches rules
 - No rules default-backend delegation
 
 Future tests should align with the Ingress resource specification, and support:
 - HTTP requests without any matching ingress rules should result in a standard `404 Not Found` responses. Currently, all unmatched requests will fallback to the default-backend.
 - Multiple exposed ingress addresses and ports.
 - Ingress resources with backend services across different namespaces.
-- HTTPS with SSL termination and SNI.
-- Support different path match modes: "exact", "prefix", and "regex" path types.
 - Other TCP protocols backend types.
 - Load-balancing between multiple upstream instances.
 - Assert commonly implemented extension points in various ingress-controllers such as gzip compression and keep-alive connections.
@@ -30,52 +29,30 @@ Future tests should align with the Ingress resource specification, and support:
 
 At the moment, `ingress-controller-conformance` does not apply modifications to the running resources in the target Kubernetes cluster.
 
-You must manually install and setup you environment targeted by the `kubectl config current-context`:
-1. Apply the backing ingress-controller implementation. Samples are available under `examples/`.
-1. Apply all, or a subset, of the ingress and service resources found under `deployments/`. Files under the `deployments` folder correspond to implemented check names.
+You must manually install and setup your ingress-controller in the environment targeted by the `kubectl config current-context`. Samples are available under `examples/`.
 
 #### Apply
 
-The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
-The "apply" command applies these resources to your Kuberenetes cluster using your `kubectl` current-context.
-
-```
-$ ./ingress-controller-conformance apply
-ingress.networking.k8s.io/host-rules created
-service/host-rules created
-deployment.apps/host-rules created
-ingress.networking.k8s.io/path-rules created
-service/path-rules-foo created
-deployment.apps/path-rules-foo created
-service/path-rules-bar created
-deployment.apps/path-rules-bar created
-ingress.networking.k8s.io/single-service created
-service/single-service created
-deployment.apps/single-service created
-```
-
-#### Apply
+The `apply` command applies these resources to your Kubernetes cluster using your `kubectl` current-context.
 
 The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
-The "apply" command applies these resources to your Kuberenetes cluster using your `kubectl` current-context.
+The tool manages a few resources and keeps them aligned with the Ingress specification under test. You must provide the target `api-version`, IngressClass's `ingress-controller` value and/or `ingress-class` annotation value of resources you wish to install.
 
 ```
-$ ./ingress-controller-conformance apply
-ingress.networking.k8s.io/host-rules created
-service/host-rules created
-deployment.apps/host-rules created
-ingress.networking.k8s.io/path-rules created
-service/path-rules-foo created
-deployment.apps/path-rules-foo created
-service/path-rules-bar created
-deployment.apps/path-rules-bar created
-ingress.networking.k8s.io/single-service created
-service/single-service created
-deployment.apps/single-service created
+$ ./ingress-controller-conformance apply --api-version=networking.k8s.io/v1beta1 --ingress-controller=getambassador.io/ingress-controller --ingress-class=ambassador
+cleaning managed resources from previous run... deployment.apps "default-backend" force deleted
+deployment.apps "host-rules-exact" force deleted
+deployment.apps "path-rules-aaa-bbb" force deleted
+[...]
+applying assets from deployments/networking.k8s.io/v1beta1 [default-backend.yaml host-rules.yaml path-rules.yaml tls.yaml]
+ingressclass.networking.k8s.io/conformance created
+ingress.networking.k8s.io/default-backend created
+[...]
 ```
 
 #### Context
 
+Read and output information about the current context and support for different API versions of Ingress.
 ```
 $ ./ingress-controller-conformance context
 Using active Kubernetes context 'docker-desktop'
@@ -86,32 +63,26 @@ The target Kubernetes cluster is running verion v1.14.6
 
 #### List
 
-Lists, in a human-readable form, all Ingress verifications
+Lists, in a human-readable form, all Ingress verifications.
 ```
 $ ./ingress-controller-conformance list
-- Ingress with host rule should send traffic to the correct backend service (host-rules)
-- [...]
-- [...]
+- default-backend [extensions/v1beta1 networking.k8s.io/v1beta1]
+        Ingress with a single default backend should send traffic to the correct backend service
+[...]
 ```
 
 #### Verify
 
-Execute a series of assertions on the deployed ingress-controller, using your `kubectl` current-context.
+Execute a series of assertions on the deployed ingress-controller, using your `kubectl` current-context and target `api-version`.
 ```
-$ ./ingress-controller-conformance verify
-Running 'all' verifications...
-Running 'host-rules' verifications...
-Running 'path-rules' verifications...
-Running 'path-rules-foo' verifications...
-        1) Assertion failed: Expected the request path would be '/foo' but was '/'
-  Check failed: path-rules-foo
-Running 'path-rules-foo-trailing' verifications...
-        1) Assertion failed: Expected the request path would be '/foo/' but was '//'
-  Check failed: path-rules-foo-trailing
+$ ./ingress-controller-conformance verify --api-version=networking.k8s.io/v1beta1
+Running 'default-backend' verifications...
+Running 'host-rules-exact-match' verifications...
 [...]
 --- Verification completed ---
-3 checks passed! 4 failures!
-in 1.777148914s
+APIVersion: networking.k8s.io/v1beta1
+13 checks passed! 3 failures!
+in 2.474967438s
 ```
 
 #### Help
