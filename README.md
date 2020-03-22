@@ -141,6 +141,17 @@ go build -o echoserver tools/echoserver.go
 go build -o ingress-controller-conformance .
 ```
 
+#### Build the Docker image:
+```console
+$ make image
+```
+
+The you can run the image like:
+```console
+$ docker run -ti --rm --mount type=bind,source=$HOME/.kube/config,target=/opt/.kube/config -e KUBECONFIG=/opt/.kube/config \
+    ingress-controller-conformance apply
+``` 
+
 ### Release build
 
 ```console

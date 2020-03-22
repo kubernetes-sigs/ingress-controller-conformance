@@ -12,6 +12,10 @@ DEPLOYMENT_YAML := \
 
 build: $(PROGRAMS) ## Build the conformance tool
 
+.PHONY: image
+image:
+	docker build -t ingress-controller-conformance .
+
 .PHONY: echoserver
 echoserver:
 	go build -o $@ tools/echoserver.go
