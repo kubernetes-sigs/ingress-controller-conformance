@@ -23,6 +23,7 @@ import (
 
 func init() {
 	pathRulesExactCheck.AddCheck(pathRulesExactFooCheck)
+	pathRulesExactCheck.AddCheck(pathRulesExactFooCaseSensitiveCheck)
 	pathRulesExactCheck.AddCheck(pathRulesExactBarCheck)
 	pathRulesExactCheck.AddCheck(pathRulesExactBarNoSlashCheck)
 	pathRulesExactCheck.AddCheck(pathRulesExactBarAaaCheck)
@@ -31,6 +32,7 @@ func init() {
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAllPathsCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooSlashCheck)
+	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooSlashCaseSensitiveCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFoCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixFooxyzCheck)
 	pathRulesPrefixCheck.AddCheck(pathRulesPrefixAaaBbbCheck)
@@ -69,6 +71,28 @@ var pathRulesExactFooCheck = &checks.Check{
 			// Assert the request received from the downstream service
 			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-exact", "expected the downstream service would be '%s' but was '%s'")
 			a.W.DeepEquals(req.Path, "/foo", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
+var pathRulesExactFooCaseSensitiveCheck = &checks.Check{
+	Name:        "path-rules-exact-foo-case-sensitive",
+	Description: "Ingress with exact path rule is preferred to prefix match and should send traffic to the correct backend service; case sensitive (/foo does not match /fOo)",
+	APIVersions: apiversion.NetworkingV1Beta1,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/fOo",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/fOo", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
 			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
@@ -206,6 +230,28 @@ var pathRulesPrefixFooSlashCheck = &checks.Check{
 			// Assert the request received from the downstream service
 			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-foo", "expected the downstream service would be '%s' but was '%s'")
 			a.W.DeepEquals(req.Path, "/foo/", "expected the request path would be '%s' but was '%s'")
+			// Assert the downstream service response
+			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
+
+			return a, nil
+		},
+	},
+}
+
+var pathRulesPrefixFooSlashCaseSensitiveCheck = &checks.Check{
+	Name:        "path-rules-prefix-foo-slash-case-sensitive",
+	Description: "Ingress with prefix path rule without a trailing slash should send traffic to the correct backend service; case sensitive (/foo does not match /Foo/)",
+	APIVersions: apiversion.All,
+	RunRequest: &checks.Request{
+		IngressName: "path-rules",
+		Path:        "/Foo/",
+		Hostname:    "path-rules",
+		Insecure:    true,
+		DoCheck: func(req *checks.CapturedRequest, res *checks.CapturedResponse) (*checks.Assertions, error) {
+			a := &checks.Assertions{}
+			// Assert the request received from the downstream service
+			a.E.DeepEquals(req.DownstreamServiceId, "path-rules-catchall", "expected the downstream service would be '%s' but was '%s'")
+			a.W.DeepEquals(req.Path, "/Foo/", "expected the request path would be '%s' but was '%s'")
 			// Assert the downstream service response
 			a.E.DeepEquals(res.StatusCode, 200, "expected statuscode to be %s but was %s")
 
