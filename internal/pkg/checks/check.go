@@ -106,6 +106,9 @@ func CaptureRoundTrip(location string, hostOverride string) (*CapturedRequest, *
 	client := &http.Client{
 		Transport: tr,
 		Timeout:   time.Second * 3,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 	req, err := http.NewRequest("GET", location, nil)
 	if err != nil {
