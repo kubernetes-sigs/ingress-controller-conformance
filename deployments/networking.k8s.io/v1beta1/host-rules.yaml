@@ -3,20 +3,27 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: path-rules
-  annotations:
-    kubernetes.io/ingress.class: ambassador
+  name: host-rules
 spec:
+  ingressClassName: conformance
+  tls:
+    - hosts:
+        - foo.bar.com
+      secretName: conformance-tls
   rules:
-    - http:
+    - host: "*.foo.com"
+      http:
         paths:
-          - path: /foo
+          - path: /
             backend:
-              serviceName: path-rules-foo
+              serviceName: host-rules-wildcard
               servicePort: 80
-          - path: /bar/
-            backend:
-              serviceName: path-rules-bar
+
+    - host: foo.bar.com
+      http:
+        paths:
+          - backend:
+              serviceName: host-rules-exact
               servicePort: 80
 
 ---
@@ -24,10 +31,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: path-rules-foo
+  name: host-rules-exact
 spec:
   selector:
-    app: path-rules-foo
+    app: host-rules-exact
   ports:
     - name: http
       port: 80
@@ -38,18 +45,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: path-rules-foo
+  name: host-rules-exact
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: path-rules-foo
+      app: host-rules-exact
   template:
     metadata:
       labels:
-        app: path-rules-foo
+        app: host-rules-exact
     spec:
       containers:
         - name: ingress-conformance-echo
@@ -57,7 +64,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: TEST_ID
-              value: path-rules-foo
+              value: host-rules-exact
           ports:
             - name: http-api
               containerPort: 3000
@@ -73,10 +80,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: path-rules-bar
+  name: host-rules-wildcard
 spec:
   selector:
-    app: path-rules-bar
+    app: host-rules-wildcard
   ports:
     - name: http
       port: 80
@@ -87,18 +94,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: path-rules-bar
+  name: host-rules-wildcard
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: path-rules-bar
+      app: host-rules-wildcard
   template:
     metadata:
       labels:
-        app: path-rules-bar
+        app: host-rules-wildcard
     spec:
       containers:
         - name: ingress-conformance-echo
@@ -106,7 +113,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: TEST_ID
-              value: path-rules-bar
+              value: host-rules-wildcard
           ports:
             - name: http-api
               containerPort: 3000

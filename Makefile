@@ -8,7 +8,7 @@ PROGRAMS := \
 	ingress-controller-conformance
 
 DEPLOYMENT_YAML := \
-	$(wildcard deployments/*.yaml)
+	$(wildcard deployments/*/*/*.yaml)
 
 build: $(PROGRAMS) ## Build the conformance tool
 

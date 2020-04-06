@@ -24,6 +24,8 @@ import (
 	"strings"
 )
 
+// RequestAssertions contains the HTTP response which can be asserted
+// by checks.CapturedRequest
 type RequestAssertions struct {
 	TestId  string
 	Path    string
@@ -38,6 +40,7 @@ type preserveSlashes struct {
 }
 
 func (s *preserveSlashes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// preserve the original URL Path, don't let Go normalize it
 	r.URL.Path = strings.Replace(r.URL.Path, "//", "/", -1)
 	s.mux.ServeHTTP(w, r)
 }
@@ -89,6 +92,8 @@ func RequestHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// Go libs have no gzip support for HTTP responses, sending it uncompressed.
+	// If the client gets a compressed gzip response, it means the ingress-controller compressed it.
 	response.Header().Set("Content-Type", "application/json")
 	response.Write(js)
 }

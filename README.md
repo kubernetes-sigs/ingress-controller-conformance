@@ -10,31 +10,30 @@ The conformance test suite will both ensure consistency across implementations, 
 
 At the moment, `ingress-controller-conformance` does not apply modifications to the running resources in the target Kubernetes cluster.
 
-You must manually install and setup you environment targeted by the `kubectl config current-context`:
-1. Apply the backing ingress-controller implementation. Samples are available under `examples/`.
-1. Apply all, or a subset, of the ingress and service resources found under `deployments`. Files under the deployments folder match implemented check names.
+You must manually install and setup your ingress-controller in the environment targeted by the `kubectl config current-context`. Samples are available under `examples/`.
 
 #### Apply
 
+The `apply` command applies these resources to your Kubernetes cluster using your `kubectl` current-context.
+
 The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
-The "apply" command applies these resources to your Kuberenetes cluster using your `kubectl` current-context.
+The tool manages a few resources and keeps them aligned with the Ingress specification under test. You must provide the target `api-version`, IngressClass's `ingress-controller` value and/or `ingress-class` annotation value of resources you wish to install.
 
 ```
-$ ./ingress-controller-conformance apply
-ingress.networking.k8s.io/host-rules created
-service/host-rules created
-deployment.apps/host-rules created
-ingress.networking.k8s.io/path-rules created
-service/path-rules-foo created
-deployment.apps/path-rules-foo created
-service/path-rules-bar created
-deployment.apps/path-rules-bar created
-ingress.networking.k8s.io/single-service created
-service/single-service created
-deployment.apps/single-service created
+$ ./ingress-controller-conformance apply --api-version=networking.k8s.io/v1beta1 --ingress-controller=getambassador.io/ingress-controller --ingress-class=ambassador
+cleaning managed resources from previous run... deployment.apps "default-backend" force deleted
+deployment.apps "host-rules-exact" force deleted
+deployment.apps "path-rules-aaa-bbb" force deleted
+[...]
+applying assets from deployments/networking.k8s.io/v1beta1 [default-backend.yaml host-rules.yaml path-rules.yaml tls.yaml]
+ingressclass.networking.k8s.io/conformance created
+ingress.networking.k8s.io/default-backend created
+[...]
 ```
 
 #### Context
+
+Read and output information about the current context and support for different API versions of Ingress.
 
 ```
 $ ./ingress-controller-conformance context

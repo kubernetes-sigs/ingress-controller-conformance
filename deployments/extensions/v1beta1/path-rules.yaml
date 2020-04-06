@@ -1,0 +1,188 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: path-rules
+  annotations:
+    kubernetes.io/ingress.class: conformance
+spec:
+  rules:
+    - host: "path-rules"
+      http:
+        paths:
+          # In extensions/v1beta1, Path is an extended POSIX regex as defined by IEEE Std 1003.1
+          # However, this is not consistent with the syntax supported by any of the common proxy vendors.
+          # It is also the case that k8s documentation (and most Ingress providers) treats the path match as a prefix match.
+
+          - path: /foo
+            backend:
+              serviceName: path-rules-foo
+              servicePort: 80
+
+          - path: /aaa/bbb/
+            backend:
+              serviceName: path-rules-aaa-bbb
+              servicePort: 80
+
+          - path: /routes/with/consecutive//slashes///are-ignored
+            backend:
+              serviceName: void
+              servicePort: 80
+
+          - path: /routes with invalid characters are ignored!
+            backend:
+              serviceName: void
+              servicePort: 80
+
+          - path: /
+            backend:
+              serviceName: path-rules-catchall
+              servicePort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-rules-foo
+spec:
+  selector:
+    app: path-rules-foo
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: path-rules-foo
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: path-rules-foo
+  template:
+    metadata:
+      labels:
+        app: path-rules-foo
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: path-rules-foo
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-rules-aaa-bbb
+spec:
+  selector:
+    app: path-rules-aaa-bbb
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: path-rules-aaa-bbb
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: path-rules-aaa-bbb
+  template:
+    metadata:
+      labels:
+        app: path-rules-aaa-bbb
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: path-rules-aaa-bbb
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-rules-catchall
+spec:
+  selector:
+    app: path-rules-catchall
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: path-rules-catchall
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: path-rules-catchall
+  template:
+    metadata:
+      labels:
+        app: path-rules-catchall
+    spec:
+      containers:
+        - name: ingress-conformance-echo
+          image: agervais/ingress-conformance-echo:latest
+          imagePullPolicy: Always
+          env:
+            - name: TEST_ID
+              value: path-rules-catchall
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
