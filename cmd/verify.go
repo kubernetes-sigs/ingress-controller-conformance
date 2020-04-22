@@ -18,38 +18,27 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/apiversion"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/assets"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/suite"
 	"github.com/spf13/cobra"
-	"golang.org/x/text/feature/plural"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"os"
-	"time"
 )
 
 func init() {
-	verifyCmd.Flags().StringVarP(&checkName, "check", "c", "", "Verify only this specified check name.")
+	verifyCmd.Flags().StringVar(&apiVersionTag, "api-version", "",
+		fmt.Sprintf("run conformance tests for a specific api-version %v", apiversion.All))
+	if err := verifyCmd.MarkFlagRequired("api-version"); err != nil {
+		panic(err)
+	}
 
 	rootCmd.AddCommand(verifyCmd)
-
-	_ = message.Set(language.English, "%d success",
-		plural.Selectf(1, "%d",
-			"=0", "No checks passed...",
-			"=1", "1 check passed,",
-			"other", "%d checks passed!",
-		),
-	)
-	_ = message.Set(language.English, "%d failure",
-		plural.Selectf(1, "%d",
-			"=0", "No failures!",
-			"=1", "1 failure",
-			"other", "%d failures!",
-		),
-	)
 }
 
 var (
-	checkName = ""
+	apiVersionTag = ""
 )
 
 var verifyCmd = &cobra.Command{
@@ -57,25 +46,23 @@ var verifyCmd = &cobra.Command{
 	Short: "Run Ingress verifications for conformance",
 	Long:  "Run Ingress verifications for conformance",
 	Run: func(cmd *cobra.Command, args []string) {
-		start := time.Now()
-
-		config := checks.Config{}
-		successCount, failureCount, err := checks.Checks.Verify(checkName, config)
+		featuresDir := ".features"
+		err := assets.RestoreAssets(featuresDir, "features")
 		if err != nil {
-			fmt.Printf(err.Error())
+			panic(err)
 		}
+		status := godog.RunWithOptions("ingress-controller-conformance", func(s *godog.Suite) {
+			suite.FeatureContext(s)
+		}, godog.Options{
+			Output:      colors.Colored(os.Stdout),
+			Format:      "progress",
+			Paths:       []string{featuresDir},
+			Tags:        apiVersionTag,
+			Strict:      true,
+			Concurrency: 1,
+			Randomize:   -1, // Let godog generate a random seed
+		})
 
-		elapsed := time.Since(start)
-
-		p := message.NewPrinter(language.English)
-		fmt.Printf("--- Verification completed ---\n%s %s\nin %s\n",
-			p.Sprintf("%d success", successCount),
-			p.Sprintf("%d failure", failureCount),
-			elapsed)
-
-		// should exit with a non-zero status if we have test failures
-		if err != nil || failureCount > 0 {
-			os.Exit(1)
-		}
+		os.Exit(status)
 	},
 }

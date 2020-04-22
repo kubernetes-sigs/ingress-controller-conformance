@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -166,9 +167,16 @@ information:
 
 		// Add all the packaged assets as streams to the
 		// apply Builder.
-		for _, name := range assets.AssetNames() {
-			applyOpts.Builder = applyOpts.Builder.Stream(
-				bytes.NewBuffer(assets.MustAsset(name)), name)
+		dir := "deployments"
+		dirAssets, err := assets.AssetDir(dir)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("applying assets from %s %v\n", dir, dirAssets)
+
+		for _, name := range dirAssets {
+			buffer := bytes.NewBuffer(assets.MustAsset(dir + "/" + name))
+			applyOpts.Builder = applyOpts.Builder.Stream(buffer, name)
 		}
 
 		// Run the builder.

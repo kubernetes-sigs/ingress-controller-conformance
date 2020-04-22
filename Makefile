@@ -10,6 +10,9 @@ PROGRAMS := \
 DEPLOYMENT_YAML := \
 	$(wildcard deployments/*.yaml)
 
+FEATURES := \
+	$(wildcard features/*.feature)
+
 build: $(PROGRAMS) ## Build the conformance tool
 
 .PHONY: echoserver
@@ -20,7 +23,7 @@ echoserver:
 ingress-controller-conformance: internal/pkg/assets/assets.go
 	go build -o $@ .
 
-internal/pkg/assets/assets.go: $(DEPLOYMENT_YAML)
+internal/pkg/assets/assets.go: $(DEPLOYMENT_YAML) $(FEATURES)
 	@$(MKDIR_P) $$(dirname $@)
 	@./hack/go-bindata.sh -pkg assets -o $@ $^
 

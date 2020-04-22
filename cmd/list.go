@@ -17,8 +17,11 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
+	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/suite"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func init() {
@@ -27,9 +30,14 @@ func init() {
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all Ingress verifications",
-	Long:  "List all Ingress verifications",
+	Short: "List all Ingress verification step definitions",
+	Long:  "List all Ingress verification step definitions",
 	Run: func(cmd *cobra.Command, args []string) {
-		checks.Checks.List()
+		_ = godog.RunWithOptions("ingress-controller-conformance", func(s *godog.Suite) {
+			suite.FeatureContext(s)
+		}, godog.Options{
+			Output:              colors.Colored(os.Stdout),
+			ShowStepDefinitions: true,
+		})
 	},
 }
