@@ -33,26 +33,37 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/iancoleman/orderedmap"
+	"golang.org/x/tools/go/ast/astutil"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/kubernetes-sigs/ingress-controller-conformance/test/files"
 )
 
+var codeGenTemplate *template.Template
+
 func main() {
 	var (
-		update          bool
-		features        []string
-		conformancePath string
+		update            bool
+		features          []string
+		conformancePath   string
+		generatorTemplate string
+		testMainPath      string
+
+		basePackage string
 	)
 
 	flag.BoolVar(&update, "update", false, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
+	flag.StringVar(&generatorTemplate, "code-generator-template", "hack/codegen.tmpl", "path to the go template for code generation")
+	flag.StringVar(&testMainPath, "test-main", "conformance_test.go", "path to the TestMain go file")
+	flag.StringVar(&basePackage, "base-package", "github.com/kubernetes-sigs/ingress-controller-conformance", "base go package")
 
 	flag.Parse()
 
@@ -67,7 +78,9 @@ func main() {
 	}
 
 	// 2. parse template
-	codeTmpl, err := template.New("template").Funcs(templateFuncs).Parse(goTemplate)
+	var err error
+	codeGenTemplate, err = template.New("codegen.tmpl").Funcs(templateFuncs).ParseFiles(generatorTemplate)
+
 	if err != nil {
 		log.Fatalf("Unexpected error parsing template: %v", err)
 	}
@@ -85,14 +98,33 @@ func main() {
 
 	// 4. iterate feature files
 	for _, path := range features {
-		err := processFeature(path, conformancePath, update, codeTmpl)
+		err := processFeature(path, conformancePath, update, basePackage, testMainPath)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
+
+	// 16. last step verifies the TestMain file
+	//     uses all the defined features
+	featuresInTestMain, err := extractFeaturesMapKeys(testMainPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	featuresInTestMainSet := sets.NewString(featuresInTestMain...)
+	featuresSet := sets.NewString(features...)
+
+	if !featuresInTestMainSet.Equal(featuresSet) {
+		log.Fatalf(`Generated features mapping from .features files differ from the expected in TestMain file %v
+expected	%v
+generated	%v
+
+`,
+			testMainPath, features, featuresInTestMain)
+	}
 }
 
-func processFeature(path, conformance string, update bool, template *template.Template) error {
+func processFeature(path, conformance string, update bool, basePackage, testMainPath string) error {
 	// 5. parse feature file
 	featureSteps, err := parseFeature(path)
 	if err != nil {
@@ -101,6 +133,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 
 	// 6. generate package name to use
 	packageName := generatePackage(path)
+
 	// 7. check if go source file exists
 	goFile := filepath.Join(conformance, packageName, "feature.go")
 	isGoFileOk := files.Exists(goFile)
@@ -123,11 +156,6 @@ func processFeature(path, conformance string, update bool, template *template.Te
 		mapping.GoDefinitions = goFunctions
 	}
 
-	// 9. check if feature file is in sync with go code
-	isInSync := false
-
-	signatureChanges := []SignatureChange{}
-
 	if isGoFileOk {
 		inFeatures := sets.NewString()
 		inGo := sets.NewString()
@@ -140,9 +168,10 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			inGo.Insert(gofunc.Name)
 		}
 
+		mapping.NewFunctions = []Function{}
+
 		if newFunctions := inFeatures.Difference(inGo); newFunctions.Len() > 0 {
 			log.Printf("Feature file %v contains %v new function/s", mapping.FeatureFile, newFunctions.Len())
-			isInSync = false
 
 			var funcs []Function
 			for _, f := range newFunctions.List() {
@@ -155,71 +184,26 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			}
 
 			mapping.NewFunctions = funcs
-		} else {
-			mapping.NewFunctions = []Function{}
 		}
 
-	FeaturesLoop:
-		for _, feature := range mapping.Features {
-			for _, gofunc := range mapping.GoDefinitions {
-				if feature.Name != gofunc.Name {
-					continue
-				}
+		// 9. check signatures are ok
+		signatureChanges := extractSignatureChanges(mapping)
+		if len(signatureChanges) != 0 {
+			var argBuf bytes.Buffer
 
-				// We need to compare function arguments checking only
-				// the number and type. Is not possible to rely in the name
-				// in the go code.
-				featKeys := feature.Args.Keys()
-				goKeys := gofunc.Args.Keys()
-				if len(featKeys) != len(goKeys) {
-					signatureChanges = append(signatureChanges, SignatureChange{
-						Function: gofunc.Name,
-						Have:     argsFromMap(gofunc.Args, true),
-						Want:     argsFromMap(feature.Args, true),
-					})
-
-					break FeaturesLoop
-				}
-
-				for index, k := range featKeys {
-					fv, _ := feature.Args.Get(k)
-					gv, _ := gofunc.Args.Get(goKeys[index])
-
-					if !reflect.DeepEqual(fv, gv) {
-						signatureChanges = append(signatureChanges, SignatureChange{
-							Function: gofunc.Name,
-							Have:     argsFromMap(gofunc.Args, true),
-							Want:     argsFromMap(feature.Args, true),
-						})
-
-						break FeaturesLoop
-					}
-				}
-
-			}
-		}
-	}
-
-	// 10. check signatures are ok
-	if len(signatureChanges) != 0 {
-		var argBuf bytes.Buffer
-		for _, sc := range signatureChanges {
-			argBuf.WriteString(fmt.Sprintf(`
+			for _, sc := range signatureChanges {
+				argBuf.WriteString(fmt.Sprintf(`
 function %v
 	have %v
 	want %v
 `, sc.Function, sc.Have, sc.Want))
+			}
+
+			return fmt.Errorf("source file %v has a different signature/s:\n %v", mapping.GoFile, argBuf.String())
 		}
-
-		return fmt.Errorf("source file %v has a different signature/s:\n %v", mapping.GoFile, argBuf.String())
 	}
 
-	// 11. if in sync, nothing to do
-	if isInSync {
-		return nil
-	}
-
-	// 12. New go feature file
+	// 10. New go feature file
 	if !isGoFileOk {
 		if !update {
 			return fmt.Errorf("generated code is out of date (from %v feature, new go file %v)",
@@ -227,54 +211,34 @@ function %v
 		}
 
 		log.Printf("Generating new go file %v...", mapping.GoFile)
-		buf := bytes.NewBuffer(make([]byte, 0))
-
-		err := template.Execute(buf, mapping)
+		// 11. Feature to go source code
+		err = generateGoFile(mapping)
 		if err != nil {
 			return err
 		}
 
-		// 10. if update is set
-		if update {
-			isDirOk := files.IsDir(mapping.GoFile)
-			if !isDirOk {
-				err := os.MkdirAll(filepath.Dir(mapping.GoFile), 0755)
-				if err != nil {
-					return err
-				}
-			}
+		featurePackage := filepath.Join(basePackage, conformance, packageName)
 
-			err := ioutil.WriteFile(mapping.GoFile, buf.Bytes(), 0644)
-			if err != nil {
-				return err
-			}
-
-			featFile := filepath.Base(path)
-			log.Printf(`Please add '"features/%v": %v.FeatureContext' to features map defined in conformance_test.go (order matters)`,
-				featFile, mapping.Package)
+		// 12. update map variable in conformance_test
+		err = updateFeatureMapVariable(mapping.FeatureFile, mapping.Package, featurePackage, testMainPath)
+		if err != nil {
+			return err
 		}
 
 		return nil
 	}
 
-	if len(mapping.NewFunctions) == 0 {
+	if !update {
+		if len(mapping.NewFunctions) != 0 {
+			return fmt.Errorf("generated code is out of date")
+		}
+
 		return nil
 	}
 
 	// 13. if update is set
-	if update {
-		log.Printf("Updating go file %v...", mapping.GoFile)
-		err := updateGoTestFile(mapping.GoFile, mapping.NewFunctions)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(mapping.NewFunctions) != 0 {
-		return fmt.Errorf("generated code is out of date")
-	}
-
-	return nil
+	log.Printf("Updating go file %v...", mapping.GoFile)
+	return updateGoTestFile(mapping.GoFile, mapping.NewFunctions)
 }
 
 // Function holds the definition of a function in a go file or godog step
@@ -318,57 +282,6 @@ var templateFuncs = template.FuncMap{
 	"argsFromMap": argsFromMap,
 }
 
-const goTemplate = `
-/*
-Copyright 2020 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-package {{ .Package }}
-
-import (
-	"github.com/cucumber/godog"
-	"github.com/cucumber/messages-go/v10"
-
-	tstate "github.com/kubernetes-sigs/ingress-controller-conformance/test/state"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/kubernetes"
-)
-
-var (
-	state *tstate.Scenario
-)
-
-{{ range .NewFunctions }}
-func {{ .Name }}{{ argsFromMap .Args false }} error {
-	return godog.ErrPending
-}
-{{end}}
-
-func FeatureContext(s *godog.Suite) { {{ range .NewFunctions }}
-	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
-
-	s.BeforeScenario(func(this *messages.Pickle) {
-		state = tstate.New(nil)
-	})
-
-	s.AfterScenario(func(*messages.Pickle, error) {
-		// delete namespace an all the content
-		_ = kubernetes.DeleteNamespace(kubernetes.KubeClient, state.Namespace)
-	})
-}
-`
-
 // parseFeature parses a godog feature file returning the unique
 // steps definitions
 func parseFeature(path string) ([]Function, error) {
@@ -384,12 +297,12 @@ func parseFeature(path string) ([]Function, error) {
 
 	scenarios := gherkin.Pickles(*gd, path, (&messages.Incrementing{}).NewId)
 
-	def := []Function{}
+	funcs := []Function{}
 	for _, s := range scenarios {
-		def = parseSteps(s.Steps, def)
+		funcs = parseSteps(s.Steps, funcs)
 	}
 
-	return def, nil
+	return funcs, nil
 }
 
 // extractFuncs reads a file containing go source code and returns
@@ -400,12 +313,13 @@ func extractFuncs(filePath string) ([]Function, error) {
 	}
 
 	fset := token.NewFileSet()
+
 	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
 
-	funcs := []Function{}
+	var funcs []Function
 
 	var printErr error
 	ast.Inspect(node, func(n ast.Node) bool {
@@ -455,6 +369,7 @@ func extractFuncs(filePath string) ([]Function, error) {
 
 func updateGoTestFile(filePath string, newFuncs []Function) error {
 	fileSet := token.NewFileSet()
+
 	node, err := parser.ParseFile(fileSet, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return err
@@ -543,6 +458,7 @@ package codegen
 
 func astFromTemplate(astFuncTpl string, funcs []Function) (*ast.File, error) {
 	buf := bytes.NewBuffer(make([]byte, 0))
+
 	astFuncs, err := template.New("ast").Funcs(templateFuncs).Parse(astFuncTpl)
 	if err != nil {
 		return nil, err
@@ -554,6 +470,7 @@ func astFromTemplate(astFuncTpl string, funcs []Function) (*ast.File, error) {
 	}
 
 	fset := token.NewFileSet()
+
 	astFile, err := parser.ParseFile(fset, "src.go", buf.String(), parser.ParseComments)
 	if err != nil {
 		return nil, err
@@ -611,6 +528,180 @@ func visitDir(files *[]string) filepath.WalkFunc {
 	}
 }
 
+const mapVariableName = "features"
+
+// extractFeaturesMapKeys extracts the keys from the features map defined in
+// the main test file defined in a variable:
+// features = map[string]func(*godog.Suite){}
+func extractFeaturesMapKeys(testPath string) ([]string, error) {
+	fset := token.NewFileSet()
+
+	fileAst, err := parser.ParseFile(fset, testPath, nil, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, declarations := range fileAst.Decls {
+		switch decl := declarations.(type) {
+		case *ast.GenDecl:
+			for _, spec := range decl.Specs {
+				spec, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+
+				for _, fn := range spec.Names {
+					if fn.Name != mapVariableName {
+						continue
+					}
+
+					features := fn.Obj.Decl.(*ast.ValueSpec).Values
+					elts := features[0].(*ast.CompositeLit).Elts
+
+					featureNames := []string{}
+					for _, elt := range elts {
+						val := elt.(*ast.KeyValueExpr).Key.(*ast.BasicLit).Value
+						s, err := strconv.Unquote(val)
+						if err != nil {
+							featureNames = append(featureNames, val)
+							continue
+						}
+
+						featureNames = append(featureNames, s)
+					}
+
+					return featureNames, nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("there is no features variable in file %v", testPath)
+}
+
+func updateFeatureMapVariable(featureName, packageName, featurePackage, testPath string) error {
+	fset := token.NewFileSet()
+
+	fileAst, err := parser.ParseFile(fset, testPath, nil, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+
+	if !astutil.UsesImport(fileAst, featurePackage) {
+		astutil.AddImport(fset, fileAst, featurePackage)
+	}
+
+	pre := func(c *astutil.Cursor) bool {
+		if sel, ok := c.Node().(*ast.GenDecl); ok {
+			for _, spec := range sel.Specs {
+				spec, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+
+				for _, fn := range spec.Names {
+					if fn.Name != mapVariableName {
+						continue
+					}
+
+					features := fn.Obj.Decl.(*ast.ValueSpec).Values[0]
+					features.(*ast.CompositeLit).Elts = append(features.(*ast.CompositeLit).Elts,
+						&ast.KeyValueExpr{
+							Key: &ast.BasicLit{
+								Kind:  token.STRING,
+								Value: fmt.Sprintf("\n\"%v\"", featureName),
+							},
+							Value: &ast.SelectorExpr{
+								X: &ast.Ident{
+									Name: packageName,
+								},
+								Sel: &ast.Ident{
+									Name: "FeatureContext,\n",
+								},
+							},
+						},
+					)
+
+					break
+				}
+			}
+		}
+
+		return true
+	}
+
+	astutil.Apply(fileAst, pre, nil)
+
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, fileAst); err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(testPath, buf.Bytes(), 0644)
+}
+
+func generateGoFile(mapping *Mapping) error {
+	buf := bytes.NewBuffer(make([]byte, 0))
+
+	err := codeGenTemplate.Execute(buf, mapping)
+	if err != nil {
+		return err
+	}
+
+	// 13. if update is set
+	isDirOk := files.IsDir(mapping.GoFile)
+	if !isDirOk {
+		err := os.MkdirAll(filepath.Dir(mapping.GoFile), 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	return ioutil.WriteFile(mapping.GoFile, buf.Bytes(), 0644)
+}
+
+func extractSignatureChanges(mapping *Mapping) []SignatureChange {
+	var signatureChanges []SignatureChange
+	for _, feature := range mapping.Features {
+		for _, gofunc := range mapping.GoDefinitions {
+			if feature.Name != gofunc.Name {
+				continue
+			}
+
+			// We need to compare function arguments checking only
+			// the number and type. Is not possible to rely in the name
+			// in the go code.
+			featKeys := feature.Args.Keys()
+			goKeys := gofunc.Args.Keys()
+
+			if len(featKeys) != len(goKeys) {
+				signatureChanges = append(signatureChanges, SignatureChange{
+					Function: gofunc.Name,
+					Have:     argsFromMap(gofunc.Args, true),
+					Want:     argsFromMap(feature.Args, true),
+				})
+
+				continue
+			}
+
+			for index, k := range featKeys {
+				fv, _ := feature.Args.Get(k)
+				gv, _ := gofunc.Args.Get(goKeys[index])
+
+				if !reflect.DeepEqual(fv, gv) {
+					signatureChanges = append(signatureChanges, SignatureChange{
+						Function: gofunc.Name,
+						Have:     argsFromMap(gofunc.Args, true),
+						Want:     argsFromMap(feature.Args, true),
+					})
+				}
+			}
+		}
+	}
+
+	return signatureChanges
+}
+
 // Code below this comment comes from github.com/cucumber/godog
 // (code defined in private methods)
 
@@ -663,6 +754,7 @@ func parseStepArgs(exp string, argument *messages.PickleStepArgument) *orderedma
 	}
 
 	stepArgs := orderedmap.New()
+
 	for i, v := range args {
 		k := fmt.Sprintf("arg%d", i+1)
 		stepArgs.Set(k, v)

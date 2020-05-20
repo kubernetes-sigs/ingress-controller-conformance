@@ -5,7 +5,8 @@ export GO111MODULE=on
 
 PROGRAMS := \
 	echoserver \
-	ingress-controller-conformance
+	ingress-controller-conformance \
+	ingress-conformance-tests
 
 DEPLOYMENT_YAML := \
 	$(wildcard deployments/*.yaml)
@@ -24,10 +25,22 @@ internal/pkg/assets/assets.go: $(DEPLOYMENT_YAML)
 	@$(MKDIR_P) $$(dirname $@)
 	@./hack/go-bindata.sh -pkg assets -o $@ $^
 
+.PHONY: ingress-conformance-tests
+ingress-conformance-tests:
+	go test -c -o $@ conformance_test.go
+
 .PHONY: clean
 clean: ## Remove build artifacts
 	$(RM_F) internal/pkg/assets/assets.go
 	$(RM_F) $(PROGRAMS)
+
+.PHONY: codegen
+codegen: ## Generate or update missing Go code defined in feature files
+	@go run hack/codegen.go -update -conformance-path=test/conformance features
+
+.PHONY: verify-codegen
+verify-codegen: ## Verify if generated Go code is in sync with feature files
+	@go run hack/codegen.go -conformance-path=test/conformance features
 
 .PHONY: help
 help: ## Display this help
