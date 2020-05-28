@@ -6,15 +6,30 @@
 *.so
 *.dylib
 
+.git
+
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+.dockerignore
+Dockerfile
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-.git
+# Extra dirs
+examples
+deployments
+
+# Documentation
+README.md
+LICENSE
+OWNERS
+SECURITY_CONTACTS
+
+# binaries
 ingress-controller-conformance
 echoserver
