@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 	Short:   "Ingress Controller Conformance test suite",
 	Version: VERSION,
 	Long: `Kubernetes ingress controller conformance test suite in Go.
-  Complete documentation is available at https://github.com/kubernetes-sigs/ingress-controller-conformance`,
+  Complete documentation is available at https://sigs.k8s.io/ingress-controller-conformance`,
 }
 
 func Execute() {

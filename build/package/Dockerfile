@@ -16,7 +16,7 @@
 ## Build
 FROM golang:1.13.1-alpine3.10
 
-WORKDIR /go/src/github.com/kubernetes-sigs/ingress-controller-conformance/
+WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance/
 COPY tools/echoserver.go echoserver.go
 RUN go build -o echoserver .
 
@@ -25,6 +25,6 @@ FROM alpine:3.10
 
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=0 /go/src/github.com/kubernetes-sigs/ingress-controller-conformance/echoserver .
+COPY --from=0 /go/src/sigs.k8s.io/ingress-controller-conformance/echoserver .
 
 CMD ["./echoserver"]

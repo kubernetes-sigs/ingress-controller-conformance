@@ -1,6 +1,6 @@
-#! /usr/bin/env bash
+#!/bin/bash
 
-# Copyright 2020 The Kubernetes Authors.
+# Copyright 2014 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# GoFmt apparently is changing @ head...
+
 set -o errexit
 set -o nounset
 set -o pipefail
 
-BINDATA=${BINDATA:-go run github.com/go-bindata/go-bindata/go-bindata}
+KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-exec $BINDATA "$@"
+cd "${KUBE_ROOT}"
+
+find_files() {
+  find . -not \( \
+      \( \
+        -wholename './.git' \
+        -o -wholename '*/vendor/*' \
+        -o -wholename '*bindata.go' \
+      \) -prune \
+    \) -name '*.go'
+}
+
+GOFMT="gofmt -s"
+bad_files=$(find_files | xargs $GOFMT -l)
+if [[ -n "${bad_files}" ]]; then
+  echo "!!! '$GOFMT' needs to be run on the following files: "
+  echo "${bad_files}"
+  exit 1
+fi

@@ -18,8 +18,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
+
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/ingress-controller-conformance/internal/pkg/k8s"
 )
 
 func init() {

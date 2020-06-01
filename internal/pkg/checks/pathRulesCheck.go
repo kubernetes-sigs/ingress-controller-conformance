@@ -18,7 +18,8 @@ package checks
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/k8s"
+
+	"sigs.k8s.io/ingress-controller-conformance/internal/pkg/k8s"
 )
 
 func init() {
