@@ -65,9 +65,8 @@ func complete(o *apply.ApplyOptions, f util.Factory) error {
 
 	o.FieldManager = "ingress-controller-conformance"
 
-	o.DryRun = false
+	o.DryRunStrategy = util.DryRunNone
 	o.ForceConflicts = false
-	o.ServerDryRun = false
 	o.ServerSideApply = false
 
 	// Don't bother recording the apply in an attribute.
@@ -76,21 +75,16 @@ func complete(o *apply.ApplyOptions, f util.Factory) error {
 	// allow for a success message operation to be specified at print time
 	o.ToPrinter = func(operation string) (printers.ResourcePrinter, error) {
 		o.PrintFlags.NamePrintFlags.Operation = operation
-		if o.DryRun {
+		if o.DryRunStrategy == util.DryRunClient {
 			o.PrintFlags.Complete("%s (dry run)")
 		}
-		if o.ServerDryRun {
+		if o.DryRunStrategy == util.DryRunServer {
 			o.PrintFlags.Complete("%s (server dry run)")
 		}
 		return o.PrintFlags.ToPrinter()
 	}
 
-	o.DiscoveryClient, err = f.ToDiscoveryClient()
-	if err != nil {
-		return err
-	}
-
-	dynamicClient, err := f.DynamicClient()
+	o.DynamicClient, err = f.DynamicClient()
 	if err != nil {
 		return err
 	}
@@ -101,7 +95,7 @@ func complete(o *apply.ApplyOptions, f util.Factory) error {
 	// the resources to parse from the compiled assets, so we don't
 	// need either.
 
-	o.DeleteOptions = o.DeleteFlags.ToOptions(dynamicClient, o.IOStreams)
+	o.DeleteOptions = o.DeleteFlags.ToOptions(o.DynamicClient, o.IOStreams)
 
 	o.OpenAPISchema, _ = f.OpenAPISchema()
 	o.Validator, err = f.Validator(true)

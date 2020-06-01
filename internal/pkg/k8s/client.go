@@ -17,7 +17,11 @@ limitations under the License.
 package k8s
 
 import (
+	"context"
 	"fmt"
+
+	"os"
+	"sync"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -25,8 +29,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"os"
-	"sync"
 )
 
 var (
@@ -76,7 +78,7 @@ func Config() *api.Config {
 }
 
 func GetIngressHost(namespace string, ingressName string) (host string, err error) {
-	ingressInterface, err := Client().NetworkingV1beta1().Ingresses(namespace).Get(ingressName, v1.GetOptions{})
+	ingressInterface, err := Client().NetworkingV1beta1().Ingresses(namespace).Get(context.TODO(), ingressName, v1.GetOptions{})
 	if err != nil {
 		return
 	}
