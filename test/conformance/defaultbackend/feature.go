@@ -20,8 +20,8 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/kubernetes"
-	tstate "github.com/kubernetes-sigs/ingress-controller-conformance/test/state"
+	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
+	tstate "sigs.k8s.io/ingress-controller-conformance/test/state"
 )
 
 var (
@@ -30,7 +30,7 @@ var (
 
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
-func FeatureContext(s *godog.Suite) { 
+func FeatureContext(s *godog.Suite) {
 	s.Step(`^a new random namespace$`, aNewRandomNamespace)
 	s.Step(`^reading Ingress from manifest "([^"]*)"$`, readingIngressFromManifest)
 	s.Step(`^creating Ingress from manifest returns an error message containing "([^"]*)"$`, creatingIngressFromManifestReturnsAnErrorMessageContaining)
@@ -52,7 +52,6 @@ func FeatureContext(s *godog.Suite) {
 		_ = kubernetes.DeleteNamespace(kubernetes.KubeClient, state.Namespace)
 	})
 }
-
 
 func aNewRandomNamespace() error {
 	return godog.ErrPending
@@ -97,4 +96,3 @@ func creatingObjectsFromDirectory(arg1 string) error {
 func withPath(arg1 string) error {
 	return godog.ErrPending
 }
-

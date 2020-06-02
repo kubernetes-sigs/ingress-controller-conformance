@@ -43,7 +43,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/files"
+	"sigs.k8s.io/ingress-controller-conformance/test/files"
 )
 
 var codeGenTemplate *template.Template
@@ -63,7 +63,7 @@ func main() {
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
 	flag.StringVar(&generatorTemplate, "code-generator-template", "hack/codegen.tmpl", "path to the go template for code generation")
 	flag.StringVar(&testMainPath, "test-main", "conformance_test.go", "path to the TestMain go file")
-	flag.StringVar(&basePackage, "base-package", "github.com/kubernetes-sigs/ingress-controller-conformance", "base go package")
+	flag.StringVar(&basePackage, "base-package", "sigs.k8s.io/ingress-controller-conformance", "base go package")
 
 	flag.Parse()
 

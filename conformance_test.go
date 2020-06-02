@@ -31,9 +31,9 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/conformance/defaultbackend"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/files"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/test/kubernetes"
+	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
+	"sigs.k8s.io/ingress-controller-conformance/test/files"
+	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
 )
 
 var (

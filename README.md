@@ -150,11 +150,11 @@ The you can run the image like:
 ```console
 $ docker run -ti --rm --mount type=bind,source=$HOME/.kube/config,target=/opt/.kube/config -e KUBECONFIG=/opt/.kube/config \
     ingress-controller-conformance apply
-``` 
+```
 
 ### Release build
 
 ```console
 $ export VERSION=0.0.1 # Or git tag
-$ go build -ldflags "-X github.com/kubernetes-sigs/ingress-controller-conformance/cmd.VERSION=$VERSION"
+$ go build -ldflags "-X sigs.k8s.io/ingress-controller-conformance/cmd.VERSION=$VERSION"
 ```

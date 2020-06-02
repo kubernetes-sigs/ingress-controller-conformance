@@ -1,6 +1,6 @@
-#! /usr/bin/env bash
+#!/bin/bash
 
-# Copyright 2020 The Kubernetes Authors.
+# Copyright 2014 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,18 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-BINDATA=${BINDATA:-go run github.com/go-bindata/go-bindata/go-bindata}
+KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-exec $BINDATA "$@"
+boilerDir="${KUBE_ROOT}/hack/boilerplate"
+boiler="${boilerDir}/boilerplate.py"
+
+files_need_boilerplate=($(${boiler} "$@"))
+
+# Run boilerplate check
+if [[ ${#files_need_boilerplate[@]} -gt 0 ]]; then
+  for file in "${files_need_boilerplate[@]}"; do
+    echo "Boilerplate header is wrong for: ${file}"
+  done
+
+  exit 1
+fi

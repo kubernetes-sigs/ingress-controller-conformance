@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/kubernetes-sigs/ingress-controller-conformance/cmd"
+	"sigs.k8s.io/ingress-controller-conformance/cmd"
 )
 
 func main() {

@@ -17,8 +17,8 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/ingress-controller-conformance/internal/pkg/checks"
 )
 
 func init() {

@@ -18,13 +18,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/ingress-controller-conformance/internal/pkg/checks"
+	"os"
+	"time"
+
 	"github.com/spf13/cobra"
 	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"os"
-	"time"
+	"sigs.k8s.io/ingress-controller-conformance/internal/pkg/checks"
 )
 
 func init() {

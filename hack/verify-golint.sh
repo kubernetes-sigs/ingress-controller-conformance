@@ -1,6 +1,6 @@
-#! /usr/bin/env bash
+#!/bin/bash
 
-# Copyright 2020 The Kubernetes Authors.
+# Copyright 2014 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,23 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-BINDATA=${BINDATA:-go run github.com/go-bindata/go-bindata/go-bindata}
+KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-exec $BINDATA "$@"
+cd "${KUBE_ROOT}"
+
+GOLINT=${GOLINT:-"golint"}
+PACKAGES=($(go list ./internal/... | grep -v /vendor/))
+bad_files=()
+for package in "${PACKAGES[@]}"; do
+  out=$("${GOLINT}" -min_confidence=0.9 "${package}" | grep -v -E '(should not use dot imports|internal/file/bindata.go)' || :)
+  if [[ -n "${out}" ]]; then
+    bad_files+=("${out}")
+  fi
+done
+if [[ "${#bad_files[@]}" -ne 0 ]]; then
+  echo "!!! '$GOLINT' problems: "
+  echo "${bad_files[@]}"
+  exit 1
+fi
+
+# ex: ts=2 sw=2 et filetype=sh
