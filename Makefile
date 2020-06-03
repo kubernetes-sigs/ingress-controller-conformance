@@ -11,11 +11,20 @@ PROGRAMS := \
 DEPLOYMENT_YAML := \
 	$(wildcard deployments/*.yaml)
 
+TAG ?= 0.0
+
+REGISTRY ?= local
+IMAGE ?= $(REGISTRY)/ingress-controller-conformance:$(TAG)
+
 build: $(PROGRAMS) ## Build the conformance tool
 
-.PHONY: image
-image:
-	docker build -t ingress-controller-conformance .
+.PHONY: build-image
+build-image:
+	docker build -t $(IMAGE) .
+
+.PHONY: publish-image
+publish-image:
+	docker push $(IMAGE)
 
 .PHONY: echoserver
 echoserver: check-go-version

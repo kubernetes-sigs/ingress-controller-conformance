@@ -13,18 +13,18 @@
 # limitations under the License.
 
 
-## Build
-FROM golang:1.13.1-alpine3.10
+# Build
+FROM golang:1.14.3 as builder
 
 WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance/
 COPY tools/echoserver.go echoserver.go
 RUN go build -o echoserver .
 
-## Run
-FROM alpine:3.10
+# Use distroless as minimal base image to package the binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/echoserver /
+USER nonroot:nonroot
 
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=0 /go/src/sigs.k8s.io/ingress-controller-conformance/echoserver .
-
-CMD ["./echoserver"]
+ENTRYPOINT ["/echoserver"]
