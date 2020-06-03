@@ -32,7 +32,8 @@ import (
 	"k8s.io/klog"
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
-	"sigs.k8s.io/ingress-controller-conformance/test/files"
+	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
+	"sigs.k8s.io/ingress-controller-conformance/test/conformance/pathrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
 )
 
@@ -42,8 +43,6 @@ var (
 	godogStopOnFailure bool
 	godogNoColors      bool
 	godogOutput        string
-
-	manifests string
 )
 
 func TestMain(m *testing.M) {
@@ -54,7 +53,6 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
-	flag.StringVar(&manifests, "manifests", "./manifests", "Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
 	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 
@@ -65,15 +63,7 @@ func TestMain(m *testing.M) {
 		klog.Fatalf("the godog format '%v' is not supported", godogFormat)
 	}
 
-	manifestsPath, err := filepath.Abs(manifests)
-	if err != nil {
-		klog.Fatal(err)
-	}
-
-	if !files.IsDir(manifestsPath) {
-		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
-	}
-
+	var err error
 	kubernetes.KubeClient, err = setupSuite()
 	if err != nil {
 		klog.Fatal(err)
@@ -111,6 +101,8 @@ func setupSuite() (*clientset.Clientset, error) {
 var (
 	features = map[string]func(*godog.Suite){
 		"features/default_backend.feature": defaultbackend.FeatureContext,
+		"features/host_rules.feature":      hostrules.FeatureContext,
+		"features/path_rules.feature":      pathrules.FeatureContext,
 	}
 )
 

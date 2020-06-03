@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package defaultbackend
+package pathrules
 
 import (
 	"github.com/cucumber/godog"
@@ -31,18 +31,12 @@ var (
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
 func FeatureContext(s *godog.Suite) {
-	s.Step(`^a new random namespace$`, aNewRandomNamespace)
-	s.Step(`^an Ingress resource named "([^"]*)" with this spec:$`, anIngressResourceNamedWithThisSpec)
+	s.Step(`^an Ingress resource in a new random namespace$`, anIngressResourceInANewRandomNamespace)
 	s.Step(`^The Ingress status shows the IP address or FQDN where it is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed)
-	s.Step(`^I send a "([^"]*)" request to http:\/\/"([^"]*)"\/"([^"]*)"$`, iSendARequestToHttp)
+	s.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, iSendARequestTo)
 	s.Step(`^the response status-code must be (\d+)$`, theResponseStatuscodeMustBe)
 	s.Step(`^the response must be served by the "([^"]*)" service$`, theResponseMustBeServedByTheService)
-	s.Step(`^the response proto must be "([^"]*)"$`, theResponseProtoMustBe)
-	s.Step(`^the response headers must contain <key> with matching <value>$`, theResponseHeadersMustContainKeyWithMatchingValue)
-	s.Step(`^the request method must be "([^"]*)"$`, theRequestMethodMustBe)
 	s.Step(`^the request path must be "([^"]*)"$`, theRequestPathMustBe)
-	s.Step(`^the request proto must be "([^"]*)"$`, theRequestProtoMustBe)
-	s.Step(`^the request headers must contain <key> with matching <value>$`, theRequestHeadersMustContainKeyWithMatchingValue)
 
 	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
@@ -54,11 +48,7 @@ func FeatureContext(s *godog.Suite) {
 	})
 }
 
-func aNewRandomNamespace() error {
-	return godog.ErrPending
-}
-
-func anIngressResourceNamedWithThisSpec(arg1 string, arg2 *messages.PickleStepArgument_PickleDocString) error {
+func anIngressResourceInANewRandomNamespace(arg1 *messages.PickleStepArgument_PickleDocString) error {
 	return godog.ErrPending
 }
 
@@ -66,7 +56,7 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
 
-func iSendARequestToHttp(arg1 string, arg2 string, arg3 string) error {
+func iSendARequestTo(arg1 string, arg2 string) error {
 	return godog.ErrPending
 }
 
@@ -78,26 +68,6 @@ func theResponseMustBeServedByTheService(arg1 string) error {
 	return godog.ErrPending
 }
 
-func theResponseProtoMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theResponseHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
-	return godog.ErrPending
-}
-
-func theRequestMethodMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
 func theRequestPathMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theRequestProtoMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theRequestHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
 	return godog.ErrPending
 }
