@@ -1,4 +1,4 @@
-# Copyright 2019 The Kubernetes Authors.
+# Copyright 2020 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+TAG ?= 0.0
 
-# Build
-FROM golang:1.14.3 as builder
+REGISTRY ?= local
 
-WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance/
-COPY tools/echoserver.go echoserver.go
-RUN go build -o echoserver .
+.PHONY: build-image
+build-image: ## Build the ingress conformance image
+	docker build -t $(REGISTRY)/echoserver:$(TAG) .
 
-# Use distroless as minimal base image to package the binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/echoserver /
-USER nonroot:nonroot
-
-ENTRYPOINT ["/echoserver"]
+.PHONY: publish-image
+publish-image:
+	docker push $(REGISTRY)/echoserver:$(TAG)
