@@ -1,11 +1,23 @@
+# Copyright 2020 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 MKDIR_P := mkdir -p
 RM_F := rm -rf
 
 export GO111MODULE=on
 
 PROGRAMS := \
-	echoserver \
-	ingress-controller-conformance \
 	ingress-conformance-tests
 
 DEPLOYMENT_YAML := \
@@ -14,21 +26,16 @@ DEPLOYMENT_YAML := \
 TAG ?= 0.0
 
 REGISTRY ?= local
-IMAGE ?= $(REGISTRY)/ingress-controller-conformance:$(TAG)
 
 build: $(PROGRAMS) ## Build the conformance tool
 
 .PHONY: build-image
-build-image:
-	docker build -t $(IMAGE) .
+build-image: ## Build the ingress conformance image
+	docker build -t $(REGISTRY)/ingress-controller-conformance:$(TAG) .
 
 .PHONY: publish-image
 publish-image:
-	docker push $(IMAGE)
-
-.PHONY: echoserver
-echoserver: check-go-version
-	go build -o $@ tools/echoserver.go
+	docker push $(REGISTRY)/ingress-controller-conformance:$(TAG)
 
 .PHONY: ingress-controller-conformance
 ingress-controller-conformance: check-go-version internal/pkg/assets/assets.go

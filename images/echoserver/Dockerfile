@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubernetes Authors.
+# Copyright 2019 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,25 +15,17 @@
 # Build
 FROM golang:1.14.3 as builder
 
-WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance/
 
-# Copy the go source
-COPY . /go/src/sigs.k8s.io/ingress-controller-conformance
+COPY echoserver.go .
 
-# Build
-RUN make ingress-conformance-tests
+RUN go build -o echoserver .
 
 # Use distroless as minimal base image to package the binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/ingress-conformance-tests .
+COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/echoserver /
 USER nonroot:nonroot
 
-ENTRYPOINT ["/ingress-conformance-tests"]
+ENTRYPOINT ["/echoserver"]
