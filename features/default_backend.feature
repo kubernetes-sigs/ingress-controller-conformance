@@ -1,49 +1,48 @@
 @sig-network @conformance @release-1.19
 Feature: Default backend
-  An Ingress with no rules sends all traffic to a single default backend.
-  The default backend is typically a configuration option of the
-  Ingress controller and is not specified in your Ingress resources.
+
+  An Ingress with no rules sends all traffic to the single default backend.
+  The default backend is part of the Ingress resource spec field `defaultBackend`.
 
   If none of the hosts or paths match the HTTP request in the
   Ingress objects, the traffic is routed to your default backend.
 
-    Rules:
-    - Response status code is 404.
-    - Response body contains arbitrary text.
+  Background:
+    Given a new random namespace
+    Given an Ingress resource named "default-backend" with this spec:
+      """
+      spec:
+        defaultBackend:
+          service:
+            name: echo-service
+            port:
+              number: 80
+      """
+    Then The Ingress status shows the IP address or FQDN where it is exposed
 
-        Scenario: Sample scenario for code-generation -- Ingress with host and no backend serviceName
-            Given a new random namespace
-              And reading Ingress from manifest "scenarios/001/ing.yaml"
-             Then creating Ingress from manifest returns an error message containing "spec.rules[0].http.paths[0].backend.serviceName: Required value"
+  Scenario Outline: An Ingress with no rules should send all requests to the default backend
+    When I send a "<method>" request to http://"<host>"/"<path>"
+    Then the response status-code must be 200
+    And the response must be served by the "echo-service" service
+    And the response proto must be "HTTP/1.1"
+    And the response headers must contain <key> with matching <value>
+      | key            | value |
+      | Content-Length | *     |
+      | Content-Type   | *     |
+      | Date           | *     |
+      | Server         | *     |
+    And the request method must be "<method>"
+    And the request path must be "<path>"
+    And the request proto must be "HTTP/1.1"
+    And the request headers must contain <key> with matching <value>
+      | key        | value              |
+      | User-Agent | Go-http-client/1.1 |
 
-        Scenario: Sample scenario for code-generation -- Ingress with host and invalid backend
-            Given a new random namespace
-              And reading Ingress from manifest "scenarios/002/ing.yaml"
-              And creating Ingress from manifest
-             When The ingress status shows the IP address or FQDN where is exposed
-              And Header "Host" with value "foo.bar"
-              And Send HTTP request with method "GET"
-             Then Response status code is 404
-
-        Scenario: Sample scenario for code-generation -- Ingress should return 404 for paths with an invalid backend serviceName
-            Given a new random namespace
-              And reading Ingress from manifest "scenarios/003/ing.yaml"
-              And creating Ingress from manifest
-             When The ingress status shows the IP address or FQDN where is exposed
-              And Header "Host" with value "foo.bar"
-             Then Send HTTP request with <path> and <method> checking response status code is 404:
-                  |  path   | method  |
-                  | /test   | GET     |
-                  | /       | POST    |
-                  | /       | PUT     |
-                  | /       | DELETE  |
-                  | /       | GET     |
-
-        Scenario: Sample scenario for code-generation -- Ingress with valid host and path /test should return 404 for unmapped path "/"
-            Given a new random namespace
-              And creating objects from directory "scenarios/004"
-             When The ingress status shows the IP address or FQDN where is exposed
-              And With path "/"
-              And Header "Host" with value "foo.bar"
-              And Send HTTP request with method "GET"
-             Then Response status code is 404
+    Examples:
+      | method | host      | path     |
+      | GET    | my-host   |          |
+      | GET    | my-host   | sub-path |
+      | POST   | some-host |          |
+      | PUT    |           | resource |
+      | DELETE | some-host | resource |
+      | PATCH  | my-host   | resource |

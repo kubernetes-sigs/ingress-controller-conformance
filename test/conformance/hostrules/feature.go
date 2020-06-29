@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package defaultbackend
+package hostrules
 
 import (
 	"github.com/cucumber/godog"
@@ -32,17 +32,14 @@ var (
 // by hand but rather through make codegen. DO NOT EDIT.
 func FeatureContext(s *godog.Suite) {
 	s.Step(`^a new random namespace$`, aNewRandomNamespace)
-	s.Step(`^an Ingress resource named "([^"]*)" with this spec:$`, anIngressResourceNamedWithThisSpec)
+	s.Step(`^a self-signed TLS secret named "([^"]*)" for the "([^"]*)" hostname$`, aSelfsignedTLSSecretNamedForTheHostname)
+	s.Step(`^an Ingress resource$`, anIngressResource)
 	s.Step(`^The Ingress status shows the IP address or FQDN where it is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed)
-	s.Step(`^I send a "([^"]*)" request to http:\/\/"([^"]*)"\/"([^"]*)"$`, iSendARequestToHttp)
+	s.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, iSendARequestTo)
+	s.Step(`^the secure connection must verify the "([^"]*)" hostname$`, theSecureConnectionMustVerifyTheHostname)
 	s.Step(`^the response status-code must be (\d+)$`, theResponseStatuscodeMustBe)
 	s.Step(`^the response must be served by the "([^"]*)" service$`, theResponseMustBeServedByTheService)
-	s.Step(`^the response proto must be "([^"]*)"$`, theResponseProtoMustBe)
-	s.Step(`^the response headers must contain <key> with matching <value>$`, theResponseHeadersMustContainKeyWithMatchingValue)
-	s.Step(`^the request method must be "([^"]*)"$`, theRequestMethodMustBe)
-	s.Step(`^the request path must be "([^"]*)"$`, theRequestPathMustBe)
-	s.Step(`^the request proto must be "([^"]*)"$`, theRequestProtoMustBe)
-	s.Step(`^the request headers must contain <key> with matching <value>$`, theRequestHeadersMustContainKeyWithMatchingValue)
+	s.Step(`^the request host must be "([^"]*)"$`, theRequestHostMustBe)
 
 	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
@@ -58,7 +55,11 @@ func aNewRandomNamespace() error {
 	return godog.ErrPending
 }
 
-func anIngressResourceNamedWithThisSpec(arg1 string, arg2 *messages.PickleStepArgument_PickleDocString) error {
+func aSelfsignedTLSSecretNamedForTheHostname(arg1 string, arg2 string) error {
+	return godog.ErrPending
+}
+
+func anIngressResource(arg1 *messages.PickleStepArgument_PickleDocString) error {
 	return godog.ErrPending
 }
 
@@ -66,7 +67,11 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
 
-func iSendARequestToHttp(arg1 string, arg2 string, arg3 string) error {
+func iSendARequestTo(arg1 string, arg2 string) error {
+	return godog.ErrPending
+}
+
+func theSecureConnectionMustVerifyTheHostname(arg1 string) error {
 	return godog.ErrPending
 }
 
@@ -78,26 +83,6 @@ func theResponseMustBeServedByTheService(arg1 string) error {
 	return godog.ErrPending
 }
 
-func theResponseProtoMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theResponseHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
-	return godog.ErrPending
-}
-
-func theRequestMethodMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theRequestPathMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theRequestProtoMustBe(arg1 string) error {
-	return godog.ErrPending
-}
-
-func theRequestHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
+func theRequestHostMustBe(arg1 string) error {
 	return godog.ErrPending
 }
