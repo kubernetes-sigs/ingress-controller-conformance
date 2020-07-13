@@ -99,23 +99,23 @@ func setupSuite() (*clientset.Clientset, error) {
 
 // Generated code. DO NOT EDIT.
 var (
-	features = map[string]func(*godog.Suite){
-		"features/default_backend.feature": defaultbackend.FeatureContext,
-		"features/host_rules.feature":      hostrules.FeatureContext,
-		"features/path_rules.feature":      pathrules.FeatureContext,
+	features = map[string]func(*godog.ScenarioContext){
+		"features/default_backend.feature": defaultbackend.InitializeScenario,
+		"features/host_rules.feature":      hostrules.InitializeScenario,
+		"features/path_rules.feature":      pathrules.InitializeScenario,
 	}
 )
 
 func TestSuite(t *testing.T) {
-	for feature, featureContext := range features {
-		err := testFeature(feature, featureContext)
+	for feature, scenarioContext := range features {
+		err := testFeature(feature, scenarioContext)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 }
 
-func testFeature(feature string, featureContext func(*godog.Suite)) error {
+func testFeature(feature string, scenarioInitializer func(*godog.ScenarioContext)) error {
 	var testOutput io.Writer
 	// default output is stdout
 	testOutput = os.Stdout
@@ -135,9 +135,7 @@ func testFeature(feature string, featureContext func(*godog.Suite)) error {
 		testOutput = writer
 	}
 
-	exitCode := godog.RunWithOptions("conformance", func(s *godog.Suite) {
-		featureContext(s)
-	}, godog.Options{
+	opts := godog.Options{
 		Format:        godogFormat,
 		Paths:         []string{feature},
 		Tags:          godogTags,
@@ -145,7 +143,13 @@ func testFeature(feature string, featureContext func(*godog.Suite)) error {
 		NoColors:      godogNoColors,
 		Output:        testOutput,
 		Concurrency:   1, // do not run tests concurrently
-	})
+	}
+
+	exitCode := godog.TestSuite{
+		Name:                "conformance",
+		ScenarioInitializer: scenarioInitializer,
+		Options:             &opts,
+	}.Run()
 	if exitCode > 0 {
 		return fmt.Errorf("unexpected exit code running test: %v", exitCode)
 	}

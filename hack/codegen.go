@@ -382,7 +382,7 @@ func updateGoTestFile(filePath string, newFuncs []Function) error {
 			return true
 		}
 
-		if fn.Name.Name == "FeatureContext" {
+		if fn.Name.Name == "InitializeScenario" {
 			featureFunc = fn
 		}
 
@@ -401,7 +401,7 @@ func updateGoTestFile(filePath string, newFuncs []Function) error {
 
 	node.Decls = append(node.Decls, astf...)
 
-	// Update steps in FeatureContext
+	// Update steps in InitializeScenario
 	astSteps, err := toContextStepsfuncs(newFuncs)
 	if err != nil {
 		return err
@@ -425,7 +425,7 @@ func updateGoTestFile(filePath string, newFuncs []Function) error {
 func toContextStepsfuncs(funcs []Function) ([]ast.Stmt, error) {
 	astStepsTpl := `
 package codegen
-func FeatureContext() { {{ range . }}
+func InitializeScenario() { {{ range . }}
 	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
 }
 `
@@ -616,7 +616,7 @@ func updateFeatureMapVariable(featureName, packageName, featurePackage, testPath
 									Name: packageName,
 								},
 								Sel: &ast.Ident{
-									Name: "FeatureContext,\n",
+									Name: "InitializeScenario,\n",
 								},
 							},
 						},

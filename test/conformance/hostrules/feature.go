@@ -30,22 +30,22 @@ var (
 
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
-func FeatureContext(s *godog.Suite) {
-	s.Step(`^a new random namespace$`, aNewRandomNamespace)
-	s.Step(`^a self-signed TLS secret named "([^"]*)" for the "([^"]*)" hostname$`, aSelfsignedTLSSecretNamedForTheHostname)
-	s.Step(`^an Ingress resource$`, anIngressResource)
-	s.Step(`^The Ingress status shows the IP address or FQDN where it is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed)
-	s.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, iSendARequestTo)
-	s.Step(`^the secure connection must verify the "([^"]*)" hostname$`, theSecureConnectionMustVerifyTheHostname)
-	s.Step(`^the response status-code must be (\d+)$`, theResponseStatuscodeMustBe)
-	s.Step(`^the response must be served by the "([^"]*)" service$`, theResponseMustBeServedByTheService)
-	s.Step(`^the request host must be "([^"]*)"$`, theRequestHostMustBe)
+func InitializeScenario(ctx *godog.ScenarioContext) {
+	ctx.Step(`^a new random namespace$`, aNewRandomNamespace)
+	ctx.Step(`^a self-signed TLS secret named "([^"]*)" for the "([^"]*)" hostname$`, aSelfsignedTLSSecretNamedForTheHostname)
+	ctx.Step(`^an Ingress resource$`, anIngressResource)
+	ctx.Step(`^The Ingress status shows the IP address or FQDN where it is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed)
+	ctx.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, iSendARequestTo)
+	ctx.Step(`^the secure connection must verify the "([^"]*)" hostname$`, theSecureConnectionMustVerifyTheHostname)
+	ctx.Step(`^the response status-code must be (\d+)$`, theResponseStatuscodeMustBe)
+	ctx.Step(`^the response must be served by the "([^"]*)" service$`, theResponseMustBeServedByTheService)
+	ctx.Step(`^the request host must be "([^"]*)"$`, theRequestHostMustBe)
 
-	s.BeforeScenario(func(this *messages.Pickle) {
+	ctx.BeforeScenario(func(*godog.Scenario) {
 		state = tstate.New(nil)
 	})
 
-	s.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(*messages.Pickle, error) {
 		// delete namespace an all the content
 		_ = kubernetes.DeleteNamespace(kubernetes.KubeClient, state.Namespace)
 	})
