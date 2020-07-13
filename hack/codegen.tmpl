@@ -30,14 +30,14 @@ var (
 
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
-func FeatureContext(s *godog.Suite) { {{- range .NewFunctions }}
-	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
+func InitializeScenario(ctx *godog.ScenarioContext) { {{- range .NewFunctions }}
+	ctx.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
 
-	s.BeforeScenario(func(this *messages.Pickle) {
+	ctx.BeforeScenario(func(*godog.Scenario) {
 		state = tstate.New(nil)
 	})
 
-	s.AfterScenario(func(*messages.Pickle, error) {
+	ctx.AfterScenario(func(*messages.Pickle, error) {
 		// delete namespace an all the content
 		_ = kubernetes.DeleteNamespace(kubernetes.KubeClient, state.Namespace)
 	})
