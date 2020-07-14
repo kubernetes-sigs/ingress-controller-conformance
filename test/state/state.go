@@ -17,77 +17,137 @@ limitations under the License.
 package state
 
 import (
-	"io/ioutil"
-	"net/http"
+	"fmt"
+	"strings"
 
-	v1beta1 "k8s.io/api/networking/v1beta1"
+	"sigs.k8s.io/ingress-controller-conformance/test/http"
 )
 
 // Scenario holds state for a test scenario
 type Scenario struct {
-	client *http.Client
-
-	RequestPath string
-
-	RequestHeaders http.Header
-
-	ResponseBody    []byte
-	ResponseHeaders http.Header
-
-	StatusCode int
-
 	Namespace string
 
-	IngressManifest string
-
-	Ingress *v1beta1.Ingress
-	Address string
+	CapturedRequest  *http.CapturedRequest
+	CapturedResponse *http.CapturedResponse
 }
 
 // New creates a new state to use in a test Scenario
-func New(client *http.Client) *Scenario {
-	if client == nil {
-		client = &http.Client{}
-	}
-
-	return &Scenario{
-		client:         client,
-		RequestPath:    "/",
-		RequestHeaders: make(http.Header),
-	}
+func New() *Scenario {
+	return &Scenario{}
 }
 
-// SendRequest sends an HTTP request and updates the
-// state. In case of an error, the HTTP state is
-// removed and returns an error.
-func (f *Scenario) SendRequest(req *http.Request) error {
-	req.Header = f.RequestHeaders
+// CaptureRoundTrip will perform an HTTP request and return the CapturedRequest and CapturedResponse tuple
+func (s *Scenario) CaptureRoundTrip(method, scheme, hostname, path string) error {
+	location := "127.0.0.1:3000" // TODO: Get the Ingress location from state
 
-	resp, err := f.client.Do(req)
-	if err != nil {
-		f.ResponseBody = nil
-		f.StatusCode = 0
-		f.ResponseHeaders = nil
-
-		return err
-	}
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	capturedRequest, capturedResponse, err := http.CaptureRoundTrip(method, scheme, hostname, path, location)
 	if err != nil {
 		return err
 	}
 
-	f.ResponseBody = bodyBytes
-	f.ResponseHeaders = resp.Header.Clone()
-	f.StatusCode = resp.StatusCode
-
-	defer resp.Body.Close()
+	s.CapturedRequest = capturedRequest
+	s.CapturedResponse = capturedResponse
 
 	return nil
 }
 
-// AddRequestHeader Add adds the key, value pair to the header.
-// It appends to any existing values associated with key.
-func (f *Scenario) AddRequestHeader(header, value string) {
-	f.RequestHeaders.Add(header, value)
+// AssertStatusCode returns an error if the captured response status code does not match the expected value
+func (s *Scenario) AssertStatusCode(statusCode int) error {
+	if s.CapturedResponse.StatusCode != statusCode {
+		return fmt.Errorf("expected status code %v but %v was returned", statusCode, s.CapturedResponse.StatusCode)
+	}
+	return nil
+}
+
+// AssertServedBy returns an error if the captured request was not served by the expected service
+func (s *Scenario) AssertServedBy(service string) error {
+	if s.CapturedRequest.DownstreamServiceId != service {
+		return fmt.Errorf("expected the request to be served by %v but it was served by %v", service, s.CapturedRequest.DownstreamServiceId)
+	}
+	return nil
+}
+
+// AssertRequestHost returns an error if the captured request host does not match the expected value
+func (s *Scenario) AssertRequestHost(host string) error {
+	if s.CapturedRequest.Host != host {
+		return fmt.Errorf("expected the request host to be %v but was %v", host, s.CapturedRequest.Host)
+	}
+	return nil
+}
+
+// AssertTLSHostname returns an error if the captured TLS response hostname does not match the expected value
+func (s *Scenario) AssertTLSHostname(hostname string) error {
+	if s.CapturedResponse.TLSHostname != hostname {
+		return fmt.Errorf("expected the response TLS hostname to be %v but was %v", hostname, s.CapturedResponse.TLSHostname)
+	}
+	return nil
+}
+
+// AssertResponseProto returns an error if the captured response proto does not match the expected value
+func (s *Scenario) AssertResponseProto(proto string) error {
+	if s.CapturedResponse.Proto != proto {
+		return fmt.Errorf("expected the response protocol to be %v but it was %v", proto, s.CapturedResponse.Proto)
+	}
+	return nil
+}
+
+// AssertRequestProto returns an error if the captured request proto does not match the expected value
+func (s *Scenario) AssertRequestProto(proto string) error {
+	if s.CapturedRequest.Proto != proto {
+		return fmt.Errorf("expected the request protocol to be %v but it was %v", proto, s.CapturedRequest.Proto)
+	}
+	return nil
+}
+
+// AssertMethod returns an error if the captured request method does not match the expected value
+func (s *Scenario) AssertMethod(method string) error {
+	if s.CapturedRequest.Method != method {
+		return fmt.Errorf("expected the request method to be %v but it was %v", method, s.CapturedRequest.Method)
+	}
+	return nil
+}
+
+// AssertRequestPath returns an error if the captured request path does not match the expected value
+func (s *Scenario) AssertRequestPath(path string) error {
+	if !strings.HasPrefix(path, "/") {
+		path = fmt.Sprintf("/%s", path)
+	}
+	if s.CapturedRequest.Path != path {
+		return fmt.Errorf("expected the request path to be %v but it was %v", path, s.CapturedRequest.Path)
+	}
+	return nil
+}
+
+// AssertResponseHeader returns an error if the captured response headers do not contain the expected headerKey,
+// or if the matching response header value does not match the expected headerValue.
+// If the headerValue string equals `*`, the header value check is ignored.
+func (s *Scenario) AssertResponseHeader(headerKey string, headerValue string) error {
+	if headerValues := s.CapturedResponse.Headers[headerKey]; headerValues == nil {
+		return fmt.Errorf("expected response headers to contain %v but it only contained %v", headerKey, s.CapturedResponse.Headers)
+	} else if headerValue != "*" {
+		for _, value := range headerValues {
+			if value == headerValue {
+				return nil
+			}
+		}
+		return fmt.Errorf("expected response headers %v to contain a %v value but it contained %v", headerKey, headerValue, headerValues)
+	}
+	return nil
+}
+
+// AssertRequestHeader returns an error if the captured request headers do not contain the expected headerKey,
+// or if the matching request header value does not match the expected headerValue.
+// If the headerValue string equals `*`, the header value check is ignored.
+func (s *Scenario) AssertRequestHeader(headerKey string, headerValue string) error {
+	if headerValues := s.CapturedRequest.Headers[headerKey]; headerValues == nil {
+		return fmt.Errorf("expected request headers to contain %v but it only contained %v", headerKey, s.CapturedRequest.Headers)
+	} else if headerValue != "*" {
+		for _, value := range headerValues {
+			if value == headerValue {
+				return nil
+			}
+		}
+		return fmt.Errorf("expected request headers %v to contain a %v value but it contained %v", headerKey, headerValue, headerValues)
+	}
+	return nil
 }
