@@ -50,10 +50,28 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	})
 }
 
-func anIngressResourceInANewRandomNamespace(arg1 *messages.PickleStepArgument_PickleDocString) error {
-	return godog.ErrPending
-}
+func anIngressResourceInANewRandomNamespace(spec *messages.PickleStepArgument_PickleDocString) error {
+	ns, err := kubernetes.NewNamespace(kubernetes.KubeClient)
+	if err != nil {
+		return err
+	}
 
+	state.Namespace = ns
+
+	ingress, err := kubernetes.IngressFromManifest(state.Namespace, spec.GetContent())
+	if err != nil {
+		return err
+	}
+
+	err = kubernetes.NewIngress(kubernetes.KubeClient, ingress)
+	if err != nil {
+		return err
+	}
+
+	state.IngressName = ingress.GetName()
+
+	return nil
+}
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
