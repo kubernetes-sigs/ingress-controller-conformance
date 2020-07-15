@@ -29,7 +29,7 @@ import (
 	"github.com/cucumber/godog"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
