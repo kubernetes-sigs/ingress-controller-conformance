@@ -17,6 +17,8 @@ limitations under the License.
 package hostrules
 
 import (
+	"net/url"
+
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 
@@ -42,7 +44,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the request host must be "([^"]*)"$`, theRequestHostMustBe)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
-		state = tstate.New(nil)
+		state = tstate.New()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
@@ -67,22 +69,26 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
 
-func iSendARequestTo(arg1 string, arg2 string) error {
-	return godog.ErrPending
+func iSendARequestTo(method string, rawUrl string) error {
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		return err
+	}
+	return state.CaptureRoundTrip(method, u.Scheme, u.Host, u.Path)
 }
 
-func theSecureConnectionMustVerifyTheHostname(arg1 string) error {
-	return godog.ErrPending
+func theSecureConnectionMustVerifyTheHostname(hostname string) error {
+	return state.AssertTLSHostname(hostname)
 }
 
-func theResponseStatuscodeMustBe(arg1 int) error {
-	return godog.ErrPending
+func theResponseStatuscodeMustBe(statusCode int) error {
+	return state.AssertStatusCode(statusCode)
 }
 
-func theResponseMustBeServedByTheService(arg1 string) error {
-	return godog.ErrPending
+func theResponseMustBeServedByTheService(service string) error {
+	return state.AssertServedBy(service)
 }
 
-func theRequestHostMustBe(arg1 string) error {
-	return godog.ErrPending
+func theRequestHostMustBe(host string) error {
+	return state.AssertRequestHost(host)
 }

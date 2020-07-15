@@ -17,6 +17,8 @@ limitations under the License.
 package pathrules
 
 import (
+	"net/url"
+
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 
@@ -39,7 +41,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the request path must be "([^"]*)"$`, theRequestPathMustBe)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
-		state = tstate.New(nil)
+		state = tstate.New()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
@@ -56,18 +58,22 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
 
-func iSendARequestTo(arg1 string, arg2 string) error {
-	return godog.ErrPending
+func iSendARequestTo(method string, rawUrl string) error {
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		return err
+	}
+	return state.CaptureRoundTrip(method, u.Scheme, u.Host, u.Path)
 }
 
-func theResponseStatuscodeMustBe(arg1 int) error {
-	return godog.ErrPending
+func theResponseStatuscodeMustBe(statusCode int) error {
+	return state.AssertStatusCode(statusCode)
 }
 
-func theResponseMustBeServedByTheService(arg1 string) error {
-	return godog.ErrPending
+func theResponseMustBeServedByTheService(service string) error {
+	return state.AssertServedBy(service)
 }
 
-func theRequestPathMustBe(arg1 string) error {
-	return godog.ErrPending
+func theRequestPathMustBe(path string) error {
+	return state.AssertRequestPath(path)
 }

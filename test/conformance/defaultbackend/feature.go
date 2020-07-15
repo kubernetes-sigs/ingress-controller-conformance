@@ -17,6 +17,8 @@ limitations under the License.
 package defaultbackend
 
 import (
+	"fmt"
+
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 
@@ -45,7 +47,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the request headers must contain <key> with matching <value>$`, theRequestHeadersMustContainKeyWithMatchingValue)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
-		state = tstate.New(nil)
+		state = tstate.New()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
@@ -66,38 +68,74 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return godog.ErrPending
 }
 
-func iSendARequestToHttp(arg1 string, arg2 string, arg3 string) error {
-	return godog.ErrPending
+func iSendARequestToHttp(method string, hostname string, path string) error {
+	return state.CaptureRoundTrip(method, "http", hostname, path)
 }
 
-func theResponseStatuscodeMustBe(arg1 int) error {
-	return godog.ErrPending
+func theResponseStatuscodeMustBe(statusCode int) error {
+	return state.AssertStatusCode(statusCode)
 }
 
-func theResponseMustBeServedByTheService(arg1 string) error {
-	return godog.ErrPending
+func theResponseMustBeServedByTheService(service string) error {
+	return state.AssertServedBy(service)
 }
 
-func theResponseProtoMustBe(arg1 string) error {
-	return godog.ErrPending
+func theResponseProtoMustBe(proto string) error {
+	return state.AssertResponseProto(proto)
 }
 
-func theResponseHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
-	return godog.ErrPending
+func theResponseHeadersMustContainKeyWithMatchingValue(headers *messages.PickleStepArgument_PickleTable) error {
+	if len(headers.Rows) < 1 {
+		return fmt.Errorf("expected a table with at least one row")
+	}
+
+	for i, row := range headers.Rows {
+		if i == 0 {
+			// Skip the header row
+			continue
+		}
+
+		headerKey := row.Cells[0].Value
+		headerValue := row.Cells[1].Value
+
+		if err := state.AssertResponseHeader(headerKey, headerValue); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func theRequestMethodMustBe(arg1 string) error {
-	return godog.ErrPending
+func theRequestMethodMustBe(method string) error {
+	return state.AssertMethod(method)
 }
 
-func theRequestPathMustBe(arg1 string) error {
-	return godog.ErrPending
+func theRequestPathMustBe(path string) error {
+	return state.AssertRequestPath(path)
 }
 
-func theRequestProtoMustBe(arg1 string) error {
-	return godog.ErrPending
+func theRequestProtoMustBe(proto string) error {
+	return state.AssertRequestProto(proto)
 }
 
-func theRequestHeadersMustContainKeyWithMatchingValue(arg1 *messages.PickleStepArgument_PickleTable) error {
-	return godog.ErrPending
+func theRequestHeadersMustContainKeyWithMatchingValue(headers *messages.PickleStepArgument_PickleTable) error {
+	if len(headers.Rows) < 1 {
+		return fmt.Errorf("expected a table with at least one row")
+	}
+
+	for i, row := range headers.Rows {
+		if i == 0 {
+			// Skip the header row
+			continue
+		}
+
+		headerKey := row.Cells[0].Value
+		headerValue := row.Cells[1].Value
+
+		if err := state.AssertRequestHeader(headerKey, headerValue); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

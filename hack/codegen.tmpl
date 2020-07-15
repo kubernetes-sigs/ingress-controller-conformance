@@ -34,7 +34,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) { {{- range .NewFunctions }}
 	ctx.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
-		state = tstate.New(nil)
+		state = tstate.New()
 	})
 
 	ctx.AfterScenario(func(*messages.Pickle, error) {
