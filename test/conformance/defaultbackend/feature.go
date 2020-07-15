@@ -83,7 +83,14 @@ func anIngressResourceNamedWithThisSpec(name string, spec *messages.PickleStepAr
 }
 
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
-	return state.WaitForIngressAddress()
+	ingress, err := kubernetes.WaitForIngressAddress(kubernetes.KubeClient, state.Namespace, state.IngressName)
+	if err != nil {
+		return err
+	}
+
+	state.IPOrFQDN = ingress
+
+	return err
 }
 
 func iSendARequestToHttp(method string, hostname string, path string) error {

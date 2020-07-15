@@ -72,8 +72,16 @@ func anIngressResourceInANewRandomNamespace(spec *messages.PickleStepArgument_Pi
 
 	return nil
 }
+
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
-	return godog.ErrPending
+	ingress, err := kubernetes.WaitForIngressAddress(kubernetes.KubeClient, state.Namespace, state.IngressName)
+	if err != nil {
+		return err
+	}
+
+	state.IPOrFQDN = ingress
+
+	return err
 }
 
 func iSendARequestTo(method string, rawUrl string) error {
