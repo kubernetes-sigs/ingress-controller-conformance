@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Build
-FROM golang:1.14.3 as builder
+FROM golang:1.14.5 as builder
 
 WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance/
 
