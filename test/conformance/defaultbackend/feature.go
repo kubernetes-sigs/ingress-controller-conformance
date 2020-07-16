@@ -85,25 +85,7 @@ func theResponseProtoMustBe(proto string) error {
 }
 
 func theResponseHeadersMustContainKeyWithMatchingValue(headers *messages.PickleStepArgument_PickleTable) error {
-	if len(headers.Rows) < 1 {
-		return fmt.Errorf("expected a table with at least one row")
-	}
-
-	for i, row := range headers.Rows {
-		if i == 0 {
-			// Skip the header row
-			continue
-		}
-
-		headerKey := row.Cells[0].Value
-		headerValue := row.Cells[1].Value
-
-		if err := state.AssertResponseHeader(headerKey, headerValue); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return assertHeaderTable(headers, state.AssertResponseHeader)
 }
 
 func theRequestMethodMustBe(method string) error {
@@ -119,20 +101,31 @@ func theRequestProtoMustBe(proto string) error {
 }
 
 func theRequestHeadersMustContainKeyWithMatchingValue(headers *messages.PickleStepArgument_PickleTable) error {
-	if len(headers.Rows) < 1 {
+	return assertHeaderTable(headers, state.AssertRequestHeader)
+}
+
+func assertHeaderTable(headerTable *messages.PickleStepArgument_PickleTable, assertF func(key string, value string) error) error {
+	if len(headerTable.Rows) < 1 {
 		return fmt.Errorf("expected a table with at least one row")
 	}
 
-	for i, row := range headers.Rows {
-		if i == 0 {
-			// Skip the header row
-			continue
+	for i, row := range headerTable.Rows {
+		if len(row.Cells) != 2 {
+			return fmt.Errorf("expected a table with 2 cells, it contained %v", len(row.Cells))
 		}
 
 		headerKey := row.Cells[0].Value
 		headerValue := row.Cells[1].Value
 
-		if err := state.AssertRequestHeader(headerKey, headerValue); err != nil {
+		if i == 0 {
+			if headerKey != "key" && headerValue != "value" {
+				return fmt.Errorf("expected a table with a header row of 'key' and 'value' but got '%v' and '%v'", headerKey, headerValue)
+			}
+			// Skip the header row
+			continue
+		}
+
+		if err := assertF(headerKey, headerValue); err != nil {
 			return err
 		}
 	}
