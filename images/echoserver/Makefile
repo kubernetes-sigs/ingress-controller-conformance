@@ -15,11 +15,12 @@
 TAG ?= 0.0
 
 REGISTRY ?= local
+IMAGE = echoserver
 
 .PHONY: build-image
 build-image: ## Build the ingress conformance image
-	docker build -t $(REGISTRY)/echoserver:$(TAG) .
+	docker build -t $(REGISTRY)/$(IMAGE):$(TAG) .
 
 .PHONY: publish-image
 publish-image:
-	docker push $(REGISTRY)/echoserver:$(TAG)
+	docker push $(REGISTRY)/$(IMAGE):$(TAG)
