@@ -182,16 +182,19 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 }
 
 const (
-	// waitForIngressAddressTimeout wait time for valid ingress status
-	waitForIngressAddressTimeout = 5 * time.Minute
 	// ingressWaitInterval time to wait between checks for a condition
 	ingressWaitInterval = 5 * time.Second
+)
+
+var (
+	// WaitForIngressAddressTimeout maximum wait time for valid ingress status value
+	WaitForIngressAddressTimeout = 5 * time.Minute
 )
 
 // WaitForIngressAddress waits for the Ingress to acquire an address.
 func WaitForIngressAddress(c clientset.Interface, namespace, name string) (string, error) {
 	var address string
-	err := wait.PollImmediate(ingressWaitInterval, waitForIngressAddressTimeout, func() (bool, error) {
+	err := wait.PollImmediate(ingressWaitInterval, WaitForIngressAddressTimeout, func() (bool, error) {
 		ipOrNameList, err := getIngressAddress(c, namespace, name)
 		if err != nil || len(ipOrNameList) == 0 {
 			if isRetryableAPIError(err) {
