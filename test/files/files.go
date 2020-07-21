@@ -49,6 +49,7 @@ func Exists(path string) bool {
 	return true
 }
 
+// IsDir reports whether path is a directory
 func IsDir(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
