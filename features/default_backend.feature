@@ -11,7 +11,6 @@ Feature: Default backend
     Given a new random namespace
     Given an Ingress resource named "default-backend" with this spec:
       """
-      spec:
         defaultBackend:
           service:
             name: echo-service

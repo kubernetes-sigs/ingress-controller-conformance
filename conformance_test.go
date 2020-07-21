@@ -25,11 +25,12 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/cucumber/godog"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
@@ -55,6 +56,7 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
 	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
 	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
+	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
 
 	flag.Parse()
 

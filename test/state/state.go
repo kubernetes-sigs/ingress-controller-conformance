@@ -25,10 +25,13 @@ import (
 
 // Scenario holds state for a test scenario
 type Scenario struct {
-	Namespace string
+	Namespace   string
+	IngressName string
 
 	CapturedRequest  *http.CapturedRequest
 	CapturedResponse *http.CapturedResponse
+
+	IPOrFQDN string
 }
 
 // New creates a new state to use in a test Scenario
@@ -38,9 +41,7 @@ func New() *Scenario {
 
 // CaptureRoundTrip will perform an HTTP request and return the CapturedRequest and CapturedResponse tuple
 func (s *Scenario) CaptureRoundTrip(method, scheme, hostname, path string) error {
-	location := "127.0.0.1:3000" // TODO: Get the Ingress location from state
-
-	capturedRequest, capturedResponse, err := http.CaptureRoundTrip(method, scheme, hostname, path, location)
+	capturedRequest, capturedResponse, err := http.CaptureRoundTrip(method, scheme, hostname, path, s.IPOrFQDN)
 	if err != nil {
 		return err
 	}

@@ -54,7 +54,13 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 }
 
 func aNewRandomNamespace() error {
-	return godog.ErrPending
+	ns, err := kubernetes.NewNamespace(kubernetes.KubeClient)
+	if err != nil {
+		return err
+	}
+
+	state.Namespace = ns
+	return nil
 }
 
 func aSelfsignedTLSSecretNamedForTheHostname(arg1 string, arg2 string) error {
@@ -66,7 +72,14 @@ func anIngressResource(arg1 *messages.PickleStepArgument_PickleDocString) error 
 }
 
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
-	return godog.ErrPending
+	ingress, err := kubernetes.WaitForIngressAddress(kubernetes.KubeClient, state.Namespace, state.IngressName)
+	if err != nil {
+		return err
+	}
+
+	state.IPOrFQDN = ingress
+
+	return err
 }
 
 func iSendARequestTo(method string, rawUrl string) error {

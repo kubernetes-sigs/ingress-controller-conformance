@@ -78,7 +78,7 @@ func Config() *api.Config {
 }
 
 func GetIngressHost(namespace string, ingressName string) (host string, err error) {
-	ingressInterface, err := Client().NetworkingV1beta1().Ingresses(namespace).Get(context.TODO(), ingressName, v1.GetOptions{})
+	ingressInterface, err := Client().NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingressName, v1.GetOptions{})
 	if err != nil {
 		return
 	}

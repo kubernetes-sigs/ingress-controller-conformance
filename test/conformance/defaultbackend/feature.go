@@ -57,15 +57,40 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 }
 
 func aNewRandomNamespace() error {
-	return godog.ErrPending
+	ns, err := kubernetes.NewNamespace(kubernetes.KubeClient)
+	if err != nil {
+		return err
+	}
+
+	state.Namespace = ns
+	return nil
 }
 
-func anIngressResourceNamedWithThisSpec(arg1 string, arg2 *messages.PickleStepArgument_PickleDocString) error {
-	return godog.ErrPending
+func anIngressResourceNamedWithThisSpec(name string, spec *messages.PickleStepArgument_PickleDocString) error {
+	ingress, err := kubernetes.IngressFromSpec(name, state.Namespace, spec.GetContent())
+	if err != nil {
+		return err
+	}
+
+	err = kubernetes.NewIngress(kubernetes.KubeClient, ingress)
+	if err != nil {
+		return err
+	}
+
+	state.IngressName = name
+
+	return nil
 }
 
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
-	return godog.ErrPending
+	ingress, err := kubernetes.WaitForIngressAddress(kubernetes.KubeClient, state.Namespace, state.IngressName)
+	if err != nil {
+		return err
+	}
+
+	state.IPOrFQDN = ingress
+
+	return err
 }
 
 func iSendARequestToHttp(method string, hostname string, path string) error {
