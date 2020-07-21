@@ -1,22 +1,21 @@
 @sig-network @conformance @release-1.19
 Feature: Default backend
-
   An Ingress with no rules sends all traffic to the single default backend.
   The default backend is part of the Ingress resource spec field `defaultBackend`.
-
+  
   If none of the hosts or paths match the HTTP request in the
   Ingress objects, the traffic is routed to your default backend.
 
   Background:
     Given a new random namespace
     Given an Ingress resource named "default-backend" with this spec:
-      """
-        defaultBackend:
-          service:
-            name: echo-service
-            port:
-              number: 8080
-      """
+    """
+    defaultBackend:
+      service:
+        name: echo-service
+        port:
+          number: 8080
+    """
     Then The Ingress status shows the IP address or FQDN where it is exposed
 
   Scenario Outline: An Ingress with no rules should send all requests to the default backend
