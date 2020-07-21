@@ -15,7 +15,7 @@ Feature: Default backend
           service:
             name: echo-service
             port:
-              number: 80
+              number: 8080
       """
     Then The Ingress status shows the IP address or FQDN where it is exposed
 
