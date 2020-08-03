@@ -62,6 +62,10 @@ codegen: check-go-version ## Generate or update missing Go code defined in featu
 verify-codegen: check-go-version ## Verify if generated Go code is in sync with feature files
 	@go run hack/codegen.go -conformance-path=test/conformance features
 
+.PHONY: verify-gherkin
+verify-gherkin: check-go-version ## Verify format of gherkin feature files
+	@hack/verify-gherkin.sh
+
 .PHONY: help
 help: ## Display this help
 	@echo Targets:
