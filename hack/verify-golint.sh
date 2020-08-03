@@ -20,19 +20,22 @@ set -o pipefail
 
 KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
 
+if ! command -v golint &> /dev/null; then
+  go get golang.org/x/lint/golint
+fi
+
 cd "${KUBE_ROOT}"
 
-GOLINT=${GOLINT:-"golint"}
 PACKAGES=($(go list ./test/...))
 bad_files=()
 for package in "${PACKAGES[@]}"; do
-  out=$("${GOLINT}" -min_confidence=0.9 "${package}" | grep -v -E '(should not use dot imports)' || :)
+  out=$(golint -min_confidence=0.9 "${package}" | grep -v -E '(should not use dot imports)' || :)
   if [[ -n "${out}" ]]; then
     bad_files+=("${out}")
   fi
 done
 if [[ "${#bad_files[@]}" -ne 0 ]]; then
-  echo "!!! '$GOLINT' problems: "
+  echo "!!! golint problems: "
   echo "${bad_files[@]}"
   exit 1
 fi
