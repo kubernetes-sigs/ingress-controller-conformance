@@ -32,6 +32,8 @@ var (
 
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
+
+// InitializeScenario configures the Feature to test
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a new random namespace$`, aNewRandomNamespace)
 	ctx.Step(`^an Ingress resource named "([^"]*)" with this spec:$`, anIngressResourceNamedWithThisSpec)

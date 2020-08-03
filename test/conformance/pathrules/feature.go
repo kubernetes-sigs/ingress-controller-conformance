@@ -32,6 +32,8 @@ var (
 
 // IMPORTANT: Steps definitions are generated and should not be modified
 // by hand but rather through make codegen. DO NOT EDIT.
+
+// InitializeScenario configures the Feature to test
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^an Ingress resource in a new random namespace$`, anIngressResourceInANewRandomNamespace)
 	ctx.Step(`^The Ingress status shows the IP address or FQDN where it is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed)
