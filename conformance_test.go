@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -74,6 +76,8 @@ func TestMain(m *testing.M) {
 	if err := kubernetes.CleanupNamespaces(kubernetes.KubeClient); err != nil {
 		klog.Fatalf("error deleting temporal namespaces: %v", err)
 	}
+
+	go handleSignals()
 
 	os.Exit(m.Run())
 }
@@ -157,4 +161,16 @@ func testFeature(feature string, scenarioInitializer func(*godog.ScenarioContext
 	}
 
 	return nil
+}
+
+func handleSignals() {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	<-signals
+
+	if err := kubernetes.CleanupNamespaces(kubernetes.KubeClient); err != nil {
+		klog.Fatalf("error deleting temporal namespaces: %v", err)
+	}
+
+	os.Exit(1)
 }
