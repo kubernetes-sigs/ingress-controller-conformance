@@ -24,13 +24,15 @@ import (
 	"strings"
 )
 
+// RequestAssertions contains information about the request and the Ingress
 type RequestAssertions struct {
-	TestId  string
-	Path    string
-	Host    string
-	Method  string
-	Proto   string
-	Headers map[string][]string
+	Path    string              `json:"path"`
+	Host    string              `json:"host"`
+	Method  string              `json:"method"`
+	Proto   string              `json:"proto"`
+	Headers map[string][]string `json:"headers"`
+
+	Context `json:",inline"`
 }
 
 type preserveSlashes struct {
@@ -42,53 +44,80 @@ func (s *preserveSlashes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-var TestId string
-
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
+// Context contains information about the context where the echoserver is running
+type Context struct {
+	Namespace string `json:"namespace"`
+	Ingress   string `json:"ingress"`
+	Service   string `json:"service"`
 }
 
-func main() {
-	c := struct {
-		Port   string
-		TestId string
-	}{
-		Port:   getEnv("PORT", "3000"),
-		TestId: getEnv("TEST_ID", ""),
-	}
-	TestId = c.TestId
+var context Context
 
-	fmt.Printf("Starting server, listening on port %s\n", c.Port)
-	fmt.Printf("Reporting TestId '%s'\n", TestId)
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	context = Context{
+		Namespace: os.Getenv("NAMESPACE"),
+		Ingress:   os.Getenv("INGRESS_NAME"),
+		Service:   os.Getenv("SERVICE_NAME"),
+	}
+
+	fmt.Printf("Starting server, listening on port %s\n", port)
 	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/", RequestHandler)
-	err := http.ListenAndServe(fmt.Sprintf(":%s", c.Port), &preserveSlashes{httpMux})
+	httpMux.HandleFunc("/health", healthHandler)
+	httpMux.HandleFunc("/", echoHandler)
+
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), &preserveSlashes{httpMux})
 	if err != nil {
 		panic(fmt.Sprintf("Failed to start listening: %s\n", err.Error()))
 	}
 }
 
-func RequestHandler(response http.ResponseWriter, request *http.Request) {
-	fmt.Printf("Echoing back request made to %s to client (%s)\n", request.RequestURI, request.RemoteAddr)
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Write([]byte(`OK`))
+}
 
+func echoHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Echoing back request made to %s to client (%s)\n", r.RequestURI, r.RemoteAddr)
 	requestAssertions := RequestAssertions{
-		TestId,
-		request.RequestURI,
-		request.Host,
-		request.Method,
-		request.Proto,
-		request.Header,
+		r.RequestURI,
+		r.Host,
+		r.Method,
+		r.Proto,
+		r.Header,
+
+		context,
 	}
 
 	js, err := json.Marshal(requestAssertions)
 	if err != nil {
-		http.Error(response, err.Error(), http.StatusInternalServerError)
+		processError(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	response.Header().Set("Content-Type", "application/json")
-	response.Write(js)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Write(js)
+}
+
+func processError(w http.ResponseWriter, err error, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	body, err := json.Marshal(struct {
+		Message string `json:"message"`
+	}{
+		err.Error(),
+	})
+	if err != nil {
+		w.WriteHeader(code)
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	w.WriteHeader(code)
+	w.Write(body)
 }
