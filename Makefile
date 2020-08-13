@@ -18,10 +18,7 @@ RM_F := rm -rf
 export GO111MODULE=on
 
 PROGRAMS := \
-	ingress-conformance-tests
-
-DEPLOYMENT_YAML := \
-	$(wildcard deployments/*.yaml)
+	ingress-controller-conformance
 
 TAG ?= 0.0
 
@@ -38,16 +35,8 @@ publish-image:
 	docker push $(REGISTRY)/ingress-controller-conformance:$(TAG)
 
 .PHONY: ingress-controller-conformance
-ingress-controller-conformance: check-go-version internal/pkg/assets/assets.go
-	go build -o $@ .
-
-internal/pkg/assets/assets.go: $(DEPLOYMENT_YAML)
-	@$(MKDIR_P) $$(dirname $@)
-	@./hack/go-bindata.sh -pkg assets -o $@ $^
-
-.PHONY: ingress-conformance-tests
-ingress-conformance-tests: check-go-version
-	go test -c -o $@ conformance_test.go
+ingress-controller-conformance: check-go-version
+	@CGO_ENABLED=0 go test -c -trimpath -ldflags="-buildid= -w" -o $@ .
 
 .PHONY: clean
 clean: ## Remove build artifacts

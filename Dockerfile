@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Build
-FROM golang:1.14.3 as builder
+FROM golang:1.15 as builder
 
 WORKDIR /go/src/sigs.k8s.io/ingress-controller-conformance
 # Copy the Go Modules manifests
@@ -27,13 +27,20 @@ RUN go mod download
 COPY . /go/src/sigs.k8s.io/ingress-controller-conformance
 
 # Build
-RUN make ingress-conformance-tests
+RUN make ingress-controller-conformance
 
-# Use distroless as minimal base image to package the binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/ingress-conformance-tests .
-USER nonroot:nonroot
+FROM k8s.gcr.io/debian-hyperkube-base-amd64:0.12.1
 
-ENTRYPOINT ["/ingress-conformance-tests"]
+RUN clean-install bash procps
+
+ENV RESULTS_DIR="/tmp/results"
+ENV INGRESS_CLASS="conformance"
+ENV WAIT_FOR_STATUS_TIMEOUT="5m"
+ENV TEST_TIMEOUT="20m"
+
+COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/ingress-controller-conformance /
+
+COPY features /features
+COPY run_conformance.sh /
+
+CMD [ "/bin/bash", "-c", "/run_conformance.sh" ]
