@@ -28,6 +28,8 @@ type Scenario struct {
 	Namespace   string
 	IngressName string
 
+	SecretName string
+
 	CapturedRequest  *http.CapturedRequest
 	CapturedResponse *http.CapturedResponse
 

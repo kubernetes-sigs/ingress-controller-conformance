@@ -116,6 +116,11 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		service.Spec.Ports[0].Name = servicePortName
 	}
 
+	// if no port is defined, use default 8080
+	if servicePort == 0 {
+		service.Spec.Ports[0].Port = 8080
+	}
+
 	service, err = applyService(kubeClientSet, namespace, service)
 	if err != nil {
 		return fmt.Errorf("creating service (%v): %w", service.Name, err)
@@ -214,32 +219,4 @@ func countReadyEndpoints(e *corev1.Endpoints) int {
 	}
 
 	return num
-}
-
-func applyService(kubeClientSet kubernetes.Interface, namespace string, service *corev1.Service) (*corev1.Service, error) {
-	existing, err := kubeClientSet.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		actual, err := kubeClientSet.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
-		return actual, err
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return existing, nil
-}
-
-func applyDeployment(kubeClientSet kubernetes.Interface, namespace string, deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-	existing, err := kubeClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		actual, err := kubeClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
-		return actual, err
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return existing, nil
 }

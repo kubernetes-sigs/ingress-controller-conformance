@@ -17,14 +17,25 @@ limitations under the License.
 package kubernetes
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"io"
+	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -181,6 +192,39 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 	return ingress, nil
 }
 
+// NewSelfSignedSecret creates a self signed SSL certificate and store it in a secret
+func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, hosts []string) error {
+	if len(hosts) == 0 {
+		return fmt.Errorf("require a non-empty host for client hello")
+	}
+
+	var serverKey, serverCert bytes.Buffer
+	var data map[string][]byte
+	host := strings.Join(hosts, ",")
+
+	if err := generateRSACert(host, &serverKey, &serverCert); err != nil {
+		return err
+	}
+
+	data = map[string][]byte{
+		v1.TLSCertKey:       serverCert.Bytes(),
+		v1.TLSPrivateKeyKey: serverKey.Bytes(),
+	}
+
+	newSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+		},
+		Data: data,
+	}
+
+	if _, err := applySecret(c, namespace, newSecret); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 const (
 	// ingressWaitInterval time to wait between checks for a condition
 	ingressWaitInterval = 5 * time.Second
@@ -251,4 +295,65 @@ func isRetryableAPIError(err error) bool {
 	}
 
 	return false
+}
+
+const (
+	rsaBits  = 2048
+	validFor = 365 * 24 * time.Hour
+)
+
+// generateRSACert generates a basic self signed certificate valir for a year
+func generateRSACert(host string, keyOut, certOut io.Writer) error {
+	priv, err := rsa.GenerateKey(rand.Reader, rsaBits)
+	if err != nil {
+		return fmt.Errorf("failed to generate key: %v", err)
+	}
+	notBefore := time.Now()
+	notAfter := notBefore.Add(validFor)
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+
+	if err != nil {
+		return fmt.Errorf("failed to generate serial number: %s", err)
+	}
+
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName:   "default",
+			Organization: []string{"Acme Co"},
+		},
+		NotBefore: notBefore,
+		NotAfter:  notAfter,
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	hosts := strings.Split(host, ",")
+	for _, h := range hosts {
+		if ip := net.ParseIP(h); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, h)
+		}
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+
+	if err != nil {
+		return fmt.Errorf("failed to create certificate: %s", err)
+	}
+
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return fmt.Errorf("failed creating cert: %v", err)
+	}
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+		return fmt.Errorf("failed creating key: %v", err)
+	}
+
+	return nil
 }
