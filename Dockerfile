@@ -41,6 +41,6 @@ ENV TEST_TIMEOUT="20m"
 COPY --from=builder /go/src/sigs.k8s.io/ingress-controller-conformance/ingress-controller-conformance /
 
 COPY features /features
-COPY run_conformance.sh /
+COPY run_e2e.sh /
 
-CMD [ "/bin/bash", "-c", "/run_conformance.sh" ]
+CMD [ "/run_e2e.sh" ]
