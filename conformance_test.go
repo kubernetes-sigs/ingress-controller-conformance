@@ -119,11 +119,20 @@ var (
 )
 
 func TestSuite(t *testing.T) {
+	var failed bool
 	for feature, scenarioContext := range features {
 		err := testFeature(feature, scenarioContext)
 		if err != nil {
-			t.Fatal(err)
+			if godogStopOnFailure {
+				t.Fatal(err)
+			}
+
+			failed = true
 		}
+	}
+
+	if failed {
+		t.Fatal("at least one step/scenario failed")
 	}
 }
 
