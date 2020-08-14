@@ -109,6 +109,18 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 	}
 	defer resp.Body.Close()
 
+	// check if the result is a redirect and return a new request
+	// this avoids the issue of URLs without valid DNS names and
+	// also sends the traffic to the ingress controller IP address or FQDN
+	if isRedirect(resp.StatusCode) {
+		redirectURL, err := resp.Location()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return CaptureRoundTrip(method, redirectURL.Scheme, redirectURL.Hostname(), redirectURL.Path, location)
+	}
+
 	capReq := CapturedRequest{}
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -134,4 +146,17 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 func isJSON(content []byte) bool {
 	var js map[string]interface{}
 	return json.Unmarshal(content, &js) == nil
+}
+
+func isRedirect(statusCode int) bool {
+	switch statusCode {
+	case http.StatusMovedPermanently,
+		http.StatusFound,
+		http.StatusSeeOther,
+		http.StatusTemporaryRedirect,
+		http.StatusPermanentRedirect:
+		return true
+	}
+
+	return false
 }
