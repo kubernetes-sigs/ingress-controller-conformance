@@ -62,8 +62,8 @@ func (s *Scenario) AssertStatusCode(statusCode int) error {
 
 // AssertServedBy returns an error if the captured request was not served by the expected service
 func (s *Scenario) AssertServedBy(service string) error {
-	if s.CapturedRequest.DownstreamServiceId != service {
-		return fmt.Errorf("expected the request to be served by %v but it was served by %v", service, s.CapturedRequest.DownstreamServiceId)
+	if s.CapturedRequest.Service != service {
+		return fmt.Errorf("expected the request to be served by %v but it was served by %v", service, s.CapturedRequest.Service)
 	}
 	return nil
 }

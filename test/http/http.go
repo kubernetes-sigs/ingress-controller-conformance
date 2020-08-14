@@ -30,12 +30,15 @@ import (
 // CapturedRequest contains the original HTTP request metadata as received
 // by the echoserver handling the test request.
 type CapturedRequest struct {
-	DownstreamServiceId string `json:"testId"` // DownstreamServiceId field contains the TEST_ID environment variable value of the downstream echoserver.
-	Path                string
-	Host                string
-	Method              string
-	Proto               string
-	Headers             map[string][]string
+	Path    string              `json:"path"`
+	Host    string              `json:"host"`
+	Method  string              `json:"method"`
+	Proto   string              `json:"proto"`
+	Headers map[string][]string `json:"headers"`
+
+	Namespace string `json:"namespace"`
+	Ingress   string `json:"ingress"`
+	Service   string `json:"service"`
 }
 
 // CapturedResponse contains the HTTP response metadata from the echoserver.

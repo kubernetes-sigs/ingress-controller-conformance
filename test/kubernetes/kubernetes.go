@@ -148,8 +148,8 @@ func NewIngress(c kubernetes.Interface, ingress *networking.Ingress) error {
 
 // IngressFromSpec deserializes an Ingress definition using an IngressSpec
 func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, error) {
-	if namespace != metav1.NamespaceNone && namespace != metav1.NamespaceDefault {
-		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed")
+	if namespace == metav1.NamespaceNone || namespace == metav1.NamespaceDefault {
+		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed (%v)", namespace)
 	}
 
 	ingress := &networking.Ingress{
@@ -168,8 +168,8 @@ func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, 
 
 // IngressFromManifest deserializes an Ingress definition using an Ingress
 func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error) {
-	if namespace != metav1.NamespaceNone && namespace != metav1.NamespaceDefault {
-		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed")
+	if namespace == metav1.NamespaceNone || namespace == metav1.NamespaceDefault {
+		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed (%v)", namespace)
 	}
 
 	ingress := &networking.Ingress{}

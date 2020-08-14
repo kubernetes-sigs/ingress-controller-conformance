@@ -74,6 +74,11 @@ func anIngressResourceNamedWithThisSpec(name string, spec *messages.PickleStepAr
 		return err
 	}
 
+	err = kubernetes.DeploymentsFromIngress(kubernetes.KubeClient, ingress)
+	if err != nil {
+		return err
+	}
+
 	err = kubernetes.NewIngress(kubernetes.KubeClient, ingress)
 	if err != nil {
 		return err
