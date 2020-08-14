@@ -96,12 +96,14 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 	}
 	defer resp.Body.Close()
 
-	capReq := &CapturedRequest{}
-	err = json.NewDecoder(resp.Body).Decode(capReq)
-	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		err = fmt.Errorf("unexpected response (statuscode: %d, length: %d): %s", resp.StatusCode, len(body), body)
-		return nil, nil, err
+	capReq := CapturedRequest{}
+	body, _ := ioutil.ReadAll(resp.Body)
+	// we cannot assume the response is JSON
+	if isJSON(body) {
+		err = json.Unmarshal(body, &capReq)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unexpected error reading response: %w", err)
+		}
 	}
 
 	capRes := &CapturedResponse{
@@ -111,5 +113,10 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		resp.Header,
 		capturedTLSHostname,
 	}
-	return capReq, capRes, nil
+	return &capReq, capRes, nil
+}
+
+func isJSON(content []byte) bool {
+	var js map[string]interface{}
+	return json.Unmarshal(content, &js) == nil
 }
