@@ -59,6 +59,7 @@ func (s *Scenario) AssertStatusCode(statusCode int) error {
 	if s.CapturedResponse.StatusCode != statusCode {
 		return fmt.Errorf("expected status code %v but %v was returned", statusCode, s.CapturedResponse.StatusCode)
 	}
+
 	return nil
 }
 
@@ -67,6 +68,7 @@ func (s *Scenario) AssertServedBy(service string) error {
 	if s.CapturedRequest.Service != service {
 		return fmt.Errorf("expected the request to be served by %v but it was served by %v", service, s.CapturedRequest.Service)
 	}
+
 	return nil
 }
 
@@ -75,6 +77,7 @@ func (s *Scenario) AssertRequestHost(host string) error {
 	if s.CapturedRequest.Host != host {
 		return fmt.Errorf("expected the request host to be %v but was %v", host, s.CapturedRequest.Host)
 	}
+
 	return nil
 }
 
@@ -83,6 +86,7 @@ func (s *Scenario) AssertTLSHostname(hostname string) error {
 	if s.CapturedResponse.TLSHostname != hostname {
 		return fmt.Errorf("expected the response TLS hostname to be %v but was %v", hostname, s.CapturedResponse.TLSHostname)
 	}
+
 	return nil
 }
 
@@ -91,6 +95,7 @@ func (s *Scenario) AssertResponseProto(proto string) error {
 	if s.CapturedResponse.Proto != proto {
 		return fmt.Errorf("expected the response protocol to be %v but it was %v", proto, s.CapturedResponse.Proto)
 	}
+
 	return nil
 }
 
@@ -99,6 +104,7 @@ func (s *Scenario) AssertRequestProto(proto string) error {
 	if s.CapturedRequest.Proto != proto {
 		return fmt.Errorf("expected the request protocol to be %v but it was %v", proto, s.CapturedRequest.Proto)
 	}
+
 	return nil
 }
 
@@ -107,6 +113,7 @@ func (s *Scenario) AssertMethod(method string) error {
 	if s.CapturedRequest.Method != method {
 		return fmt.Errorf("expected the request method to be %v but it was %v", method, s.CapturedRequest.Method)
 	}
+
 	return nil
 }
 
@@ -115,9 +122,11 @@ func (s *Scenario) AssertRequestPath(path string) error {
 	if !strings.HasPrefix(path, "/") {
 		path = fmt.Sprintf("/%s", path)
 	}
+
 	if s.CapturedRequest.Path != path {
 		return fmt.Errorf("expected the request path to be %v but it was %v", path, s.CapturedRequest.Path)
 	}
+
 	return nil
 }
 
@@ -133,8 +142,10 @@ func (s *Scenario) AssertResponseHeader(headerKey string, headerValue string) er
 				return nil
 			}
 		}
+
 		return fmt.Errorf("expected response headers %v to contain a %v value but it contained %v", headerKey, headerValue, headerValues)
 	}
+
 	return nil
 }
 
@@ -150,7 +161,9 @@ func (s *Scenario) AssertRequestHeader(headerKey string, headerValue string) err
 				return nil
 			}
 		}
+
 		return fmt.Errorf("expected request headers %v to contain a %v value but it contained %v", headerKey, headerValue, headerValues)
 	}
+
 	return nil
 }

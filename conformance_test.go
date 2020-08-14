@@ -59,6 +59,7 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
 	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
+	flag.DurationVar(&kubernetes.WaitForEndpointsTimeout, "wait-time-for-ready", 5*time.Minute, "Maximum wait time for ready endpoints")
 
 	flag.Parse()
 
@@ -83,6 +84,11 @@ func TestMain(m *testing.M) {
 }
 
 func setupSuite() (*clientset.Clientset, error) {
+	err := kubernetes.LoadTemplates()
+	if err != nil {
+		return nil, fmt.Errorf("error loading templates: %v", err)
+	}
+
 	c, err := kubernetes.LoadClientset()
 	if err != nil {
 		return nil, fmt.Errorf("error loading client: %v", err)
@@ -157,7 +163,7 @@ func testFeature(feature string, scenarioInitializer func(*godog.ScenarioContext
 		Options:             &opts,
 	}.Run()
 	if exitCode > 0 {
-		return fmt.Errorf("unexpected exit code running test: %v", exitCode)
+		return fmt.Errorf("unexpected exit code testing %v: %v", feature, exitCode)
 	}
 
 	return nil

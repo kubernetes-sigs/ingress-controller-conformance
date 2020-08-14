@@ -70,7 +70,7 @@ func anIngressResourceInANewRandomNamespace(spec *messages.PickleStepArgument_Pi
 		return err
 	}
 
-	err = kubernetes.NewIngress(kubernetes.KubeClient, ingress)
+	err = kubernetes.NewIngress(kubernetes.KubeClient, state.Namespace, ingress)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,8 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return err
 }
 
-func iSendARequestTo(method string, rawUrl string) error {
-	u, err := url.Parse(rawUrl)
+func iSendARequestTo(method string, rawURL string) error {
+	u, err := url.Parse(rawURL)
 	if err != nil {
 		return err
 	}

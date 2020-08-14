@@ -21,6 +21,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networking "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -58,6 +59,20 @@ func applyService(kubeClientSet kubernetes.Interface, namespace string, service 
 	existing, err := kubeClientSet.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		actual, err := kubeClientSet.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
+		return actual, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return existing, nil
+}
+
+func applyIngress(kubeClientSet kubernetes.Interface, namespace string, ingress *networking.Ingress) (*networking.Ingress, error) {
+	existing, err := kubeClientSet.NetworkingV1().Ingresses(namespace).Get(context.TODO(), ingress.Name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		actual, err := kubeClientSet.NetworkingV1().Ingresses(namespace).Create(context.TODO(), ingress, metav1.CreateOptions{})
 		return actual, err
 	}
 

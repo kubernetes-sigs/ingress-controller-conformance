@@ -27,6 +27,11 @@ import (
 	"time"
 )
 
+var (
+	// HTTPClientTimeout specifies a time limit for requests made by a client
+	HTTPClientTimeout = 3 * time.Second
+)
+
 // CapturedRequest contains the original HTTP request metadata as received
 // by the echoserver handling the test request.
 type CapturedRequest struct {
@@ -69,23 +74,31 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 				}
 
 				// Verify the certificate Hostname matches the request hostname.
-				capturedTLSHostname = hostname
+				capturedTLSHostname = certs[0].DNSNames[0]
 				return certs[0].VerifyHostname(hostname)
 			},
 		},
 	}
+
+	if scheme == "https" {
+		tr.TLSClientConfig.ServerName = hostname
+	}
+
 	client := &http.Client{
 		Transport: tr,
-		Timeout:   time.Second * 3,
+		Timeout:   HTTPClientTimeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
+
 	url := fmt.Sprintf("%s://%s/%s", scheme, location, strings.TrimPrefix(path, "/"))
+
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if hostname != "" {
 		req.Host = hostname
 	}
@@ -98,6 +111,7 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 
 	capReq := CapturedRequest{}
 	body, _ := ioutil.ReadAll(resp.Body)
+
 	// we cannot assume the response is JSON
 	if isJSON(body) {
 		err = json.Unmarshal(body, &capReq)
@@ -113,6 +127,7 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		resp.Header,
 		capturedTLSHostname,
 	}
+
 	return &capReq, capRes, nil
 }
 

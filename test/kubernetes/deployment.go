@@ -17,8 +17,10 @@ limitations under the License.
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	text_template "text/template"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,29 +37,29 @@ import (
 const EchoService = "echo"
 
 // EchoContainer container image name
-//const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:e4e132da40d303f4b50e183b977ed1eb5c6db6eb0ddbdaa19565d14d49e05940"
-const EchoContainer = "aledbf/echoserver"
+const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:9505c462fed1f67953b4ed9ce06b121f93f5565a552cf1dd61fc4d86cd8a8857"
 
-const deploymentTemplate = `
+var k8sTemplates = map[string]string{
+	"deployment": `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: %v
+  name: {{ .Name }}
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: %v
+      app: {{ .MatchLabels }}
   template:
     metadata:
       labels:
-        app: %v
+        app: {{ .Labels }}
     spec:
       containers:
       - name: ingress-conformance-echo
-        image: %v
+        image: {{ .Image }}
         env:
         - name: POD_NAME
           valueFrom:
@@ -68,34 +70,58 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: INGRESS_NAME
-          value: %v
+          value: {{ .Ingress }}
         - name: SERVICE_NAME
-          value: %v
+          value: {{ .Service }}
         ports:
-        - name: %v
+        - name: {{ .PortName }}
           containerPort: 3000
         readinessProbe:
           httpGet:
             path: /health
             port: 3000
-`
-const serviceTemplate = `
+`,
+	"service": `
 apiVersion: v1
 kind: Service
 metadata:
-  name: %v
+  name: {{ .Name }}
 spec:
   selector:
-    app: %v
+    app: {{ .Selector }}
   ports:
-    - port: %v
+    - port: {{ .Port }}
       targetPort: 3000
-`
+`,
+}
 
 // NewEchoDeployment creates a new deployment of the echoserver image in a particular namespace.
 func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serviceName, servicePortName string, servicePort int32) error {
 	deploymentName := fmt.Sprintf("%v-%v", name, serviceName)
-	manifest := fmt.Sprintf(deploymentTemplate, deploymentName, deploymentName, deploymentName, EchoContainer, name, serviceName, servicePortName)
+
+	deploymentData := struct {
+		Name        string
+		MatchLabels string
+		Labels      string
+		Image       string
+		Ingress     string
+		Service     string
+		PortName    string
+	}{
+		deploymentName,
+		deploymentName,
+		deploymentName,
+		EchoContainer,
+		name,
+		serviceName,
+		servicePortName,
+	}
+
+	manifest, err := renderTemplate("deployment", deploymentData)
+	if err != nil {
+		return err
+	}
+
 	deployment, err := deploymentFromManifest(manifest)
 	if err != nil {
 		return err
@@ -106,7 +132,21 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		return fmt.Errorf("creating deployment (%v): %w", deployment.Name, err)
 	}
 
-	manifest = fmt.Sprintf(serviceTemplate, serviceName, deploymentName, servicePort)
+	serviceData := struct {
+		Name     string
+		Selector string
+		Port     int32
+	}{
+		serviceName,
+		deploymentName,
+		servicePort,
+	}
+
+	manifest, err = renderTemplate("service", serviceData)
+	if err != nil {
+		return err
+	}
+
 	service, err := serviceFromManifest(manifest)
 	if err != nil {
 		return err
@@ -126,7 +166,7 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		return fmt.Errorf("creating service (%v): %w", service.Name, err)
 	}
 
-	err = waitForEndpoints(kubeClientSet, 5*time.Minute, service.Namespace, service.Name, 1)
+	err = waitForEndpoints(kubeClientSet, WaitForEndpointsTimeout, service.Namespace, service.Name, 1)
 	if err != nil {
 		return fmt.Errorf("waiting for service (%v) endpoints available: %w", service.Name, err)
 	}
@@ -136,14 +176,11 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 
 // DeploymentsFromIngress creates the required deployments for the services defined in the ingress object
 func DeploymentsFromIngress(kubeClientSet kubernetes.Interface, ingress *networking.Ingress) error {
-	testID := ingress.Name
-	namespace := ingress.Namespace
-
 	if ingress.Spec.DefaultBackend != nil {
 		service := ingress.Spec.DefaultBackend.Service
 		servicePort := service.Port
 
-		err := NewEchoDeployment(kubeClientSet, namespace, testID, service.Name, servicePort.Name, servicePort.Number)
+		err := NewEchoDeployment(kubeClientSet, ingress.Namespace, ingress.Name, service.Name, servicePort.Name, servicePort.Number)
 		if err != nil {
 			return err
 		}
@@ -158,7 +195,7 @@ func DeploymentsFromIngress(kubeClientSet kubernetes.Interface, ingress *network
 			service := path.Backend.Service
 			servicePort := service.Port
 
-			err := NewEchoDeployment(kubeClientSet, namespace, testID, service.Name, servicePort.Name, servicePort.Number)
+			err := NewEchoDeployment(kubeClientSet, ingress.Namespace, ingress.Name, service.Name, servicePort.Name, servicePort.Number)
 			if err != nil {
 				return err
 			}
@@ -219,4 +256,35 @@ func countReadyEndpoints(e *corev1.Endpoints) int {
 	}
 
 	return num
+}
+
+var templates = map[string]*text_template.Template{}
+
+// LoadTemplates parses templates required to deploy Kubernetes objects
+func LoadTemplates() error {
+	for name, template := range k8sTemplates {
+		tmpl, err := text_template.New(name).Parse(template)
+		if err != nil {
+			return err
+		}
+
+		templates[name] = tmpl
+	}
+
+	return nil
+}
+
+func renderTemplate(name string, data interface{}) (string, error) {
+	tmpl, ok := templates[name]
+	if !ok {
+		return "", fmt.Errorf("there is no template with name %v", name)
+	}
+
+	var tpl bytes.Buffer
+	err := tmpl.Execute(&tpl, data)
+	if err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
 }

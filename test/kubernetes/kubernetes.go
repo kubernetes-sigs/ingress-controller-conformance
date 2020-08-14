@@ -35,7 +35,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,10 +147,9 @@ func CleanupNamespaces(c kubernetes.Interface) error {
 }
 
 // NewIngress creates a new ingress
-func NewIngress(c kubernetes.Interface, ingress *networking.Ingress) error {
-	_, err := c.NetworkingV1().Ingresses(ingress.Namespace).Create(context.TODO(), ingress, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("creating Ingress: %w", err)
+func NewIngress(c kubernetes.Interface, namespace string, ingress *networking.Ingress) error {
+	if _, err := applyIngress(c, namespace, ingress); err != nil {
+		return err
 	}
 
 	return nil
@@ -160,7 +158,7 @@ func NewIngress(c kubernetes.Interface, ingress *networking.Ingress) error {
 // IngressFromSpec deserializes an Ingress definition using an IngressSpec
 func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, error) {
 	if namespace == metav1.NamespaceNone || namespace == metav1.NamespaceDefault {
-		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed (%v)", namespace)
+		return nil, fmt.Errorf("ingress definitions in the default namespace are not allowed (%v)", namespace)
 	}
 
 	ingress := &networking.Ingress{
@@ -195,23 +193,23 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 // NewSelfSignedSecret creates a self signed SSL certificate and store it in a secret
 func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, hosts []string) error {
 	if len(hosts) == 0 {
-		return fmt.Errorf("require a non-empty host for client hello")
+		return fmt.Errorf("require a non-empty hosts for Subject Alternate Name values")
 	}
 
 	var serverKey, serverCert bytes.Buffer
-	var data map[string][]byte
+
 	host := strings.Join(hosts, ",")
 
 	if err := generateRSACert(host, &serverKey, &serverCert); err != nil {
 		return err
 	}
 
-	data = map[string][]byte{
-		v1.TLSCertKey:       serverCert.Bytes(),
-		v1.TLSPrivateKeyKey: serverKey.Bytes(),
+	data := map[string][]byte{
+		corev1.TLSCertKey:       serverCert.Bytes(),
+		corev1.TLSPrivateKeyKey: serverKey.Bytes(),
 	}
 
-	newSecret := &v1.Secret{
+	newSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
 		},
@@ -233,6 +231,8 @@ const (
 var (
 	// WaitForIngressAddressTimeout maximum wait time for valid ingress status value
 	WaitForIngressAddressTimeout = 5 * time.Minute
+	// WaitForEndpointsTimeout maximum wait time for ready endpoints
+	WaitForEndpointsTimeout = 5 * time.Minute
 )
 
 // WaitForIngressAddress waits for the Ingress to acquire an address.
