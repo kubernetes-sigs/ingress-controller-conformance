@@ -76,10 +76,26 @@ spec:
         ports:
         - name: {{ .PortName }}
           containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
         readinessProbe:
           httpGet:
             path: /health
             port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
 `,
 	"service": `
 apiVersion: v1
