@@ -31,7 +31,7 @@ RUN make ingress-controller-conformance
 
 FROM k8s.gcr.io/debian-hyperkube-base-amd64:0.12.1
 
-RUN clean-install bash procps
+RUN clean-install bash
 
 ENV RESULTS_DIR="/tmp/results"
 ENV INGRESS_CLASS="conformance"
