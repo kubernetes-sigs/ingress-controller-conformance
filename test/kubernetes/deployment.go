@@ -17,10 +17,8 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	text_template "text/template"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,6 +29,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
+
+	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes/templates"
 )
 
 // EchoService name of the deployment for the echo app
@@ -39,81 +39,24 @@ const EchoService = "echo"
 // EchoContainer container image name
 const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:9505c462fed1f67953b4ed9ce06b121f93f5565a552cf1dd61fc4d86cd8a8857"
 
-var k8sTemplates = map[string]string{
-	"deployment": `
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Name }}
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  selector:
-    matchLabels:
-      app: {{ .MatchLabels }}
-  template:
-    metadata:
-      labels:
-        app: {{ .Labels }}
-    spec:
-      containers:
-      - name: ingress-conformance-echo
-        image: {{ .Image }}
-        env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: INGRESS_NAME
-          value: {{ .Ingress }}
-        - name: SERVICE_NAME
-          value: {{ .Service }}
-        ports:
-        - name: {{ .PortName }}
-          containerPort: 3000
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-            scheme: HTTP
-          initialDelaySeconds: 1
-          periodSeconds: 1
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-            scheme: HTTP
-          initialDelaySeconds: 1
-          periodSeconds: 1
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 10
-`,
-	"service": `
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Name }}
-spec:
-  selector:
-    app: {{ .Selector }}
-  ports:
-    - port: {{ .Port }}
-      targetPort: 3000
-`,
-}
-
 // NewEchoDeployment creates a new deployment of the echoserver image in a particular namespace.
 func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serviceName, servicePortName string, servicePort int32) error {
 	deploymentName := fmt.Sprintf("%v-%v", name, serviceName)
+
+	deployment, err := kubeClientSet.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		// if the deployment doesn't exists is still returned
+		deployment = nil
+	}
+
+	// assume an existing deployment is ok
+	if deployment != nil {
+		return nil
+	}
 
 	deploymentData := struct {
 		Name        string
@@ -133,17 +76,17 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		servicePortName,
 	}
 
-	manifest, err := renderTemplate("deployment", deploymentData)
+	manifest, err := templates.Render("deployment", deploymentData)
 	if err != nil {
 		return err
 	}
 
-	deployment, err := deploymentFromManifest(manifest)
+	deployment, err = deploymentFromManifest(manifest)
 	if err != nil {
 		return err
 	}
 
-	_, err = applyDeployment(kubeClientSet, namespace, deployment)
+	_, err = kubeClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("creating deployment (%v): %w", deployment.Name, err)
 	}
@@ -158,7 +101,7 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		servicePort,
 	}
 
-	manifest, err = renderTemplate("service", serviceData)
+	manifest, err = templates.Render("service", serviceData)
 	if err != nil {
 		return err
 	}
@@ -177,7 +120,7 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		service.Spec.Ports[0].Port = 8080
 	}
 
-	service, err = applyService(kubeClientSet, namespace, service)
+	service, err = kubeClientSet.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("creating service (%v): %w", service.Name, err)
 	}
@@ -247,7 +190,7 @@ func waitForEndpoints(kubeClientSet kubernetes.Interface, timeout time.Duration,
 		return nil
 	}
 
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	return wait.Poll(5*time.Second, timeout, func() (bool, error) {
 		endpoint, err := kubeClientSet.CoreV1().Endpoints(ns).Get(context.TODO(), name, metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			return false, nil
@@ -272,35 +215,4 @@ func countReadyEndpoints(e *corev1.Endpoints) int {
 	}
 
 	return num
-}
-
-var templates = map[string]*text_template.Template{}
-
-// LoadTemplates parses templates required to deploy Kubernetes objects
-func LoadTemplates() error {
-	for name, template := range k8sTemplates {
-		tmpl, err := text_template.New(name).Parse(template)
-		if err != nil {
-			return err
-		}
-
-		templates[name] = tmpl
-	}
-
-	return nil
-}
-
-func renderTemplate(name string, data interface{}) (string, error) {
-	tmpl, ok := templates[name]
-	if !ok {
-		return "", fmt.Errorf("there is no template with name %v", name)
-	}
-
-	var tpl bytes.Buffer
-	err := tmpl.Execute(&tpl, data)
-	if err != nil {
-		return "", err
-	}
-
-	return tpl.String(), nil
 }

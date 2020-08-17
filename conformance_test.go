@@ -31,13 +31,13 @@ import (
 
 	"github.com/cucumber/godog"
 	"k8s.io/apimachinery/pkg/util/sets"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/pathrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
+	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes/templates"
 )
 
 var (
@@ -68,8 +68,7 @@ func TestMain(m *testing.M) {
 		klog.Fatalf("the godog format '%v' is not supported", godogFormat)
 	}
 
-	var err error
-	kubernetes.KubeClient, err = setupSuite()
+	err := setup()
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -83,30 +82,18 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func setupSuite() (*clientset.Clientset, error) {
-	err := kubernetes.LoadTemplates()
+func setup() error {
+	err := templates.Load()
 	if err != nil {
-		return nil, fmt.Errorf("error loading templates: %v", err)
+		return fmt.Errorf("error loading templates: %v", err)
 	}
 
-	c, err := kubernetes.LoadClientset()
+	kubernetes.KubeClient, err = kubernetes.LoadClientset()
 	if err != nil {
-		return nil, fmt.Errorf("error loading client: %v", err)
+		return fmt.Errorf("error loading client: %v", err)
 	}
 
-	dc := c.DiscoveryClient
-
-	serverVersion, serverErr := dc.ServerVersion()
-	if serverErr != nil {
-		return nil, fmt.Errorf("unexpected server error retrieving version: %v", serverErr)
-	}
-
-	if serverVersion != nil {
-		// TODO: check minimum k8s version?
-		klog.Infof("kube-apiserver version: %s", serverVersion.GitVersion)
-	}
-
-	return c, nil
+	return nil
 }
 
 // Generated code. DO NOT EDIT.

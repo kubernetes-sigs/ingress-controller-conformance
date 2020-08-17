@@ -148,7 +148,7 @@ func CleanupNamespaces(c kubernetes.Interface) error {
 
 // NewIngress creates a new ingress
 func NewIngress(c kubernetes.Interface, namespace string, ingress *networking.Ingress) error {
-	if _, err := applyIngress(c, namespace, ingress); err != nil {
+	if _, err := c.NetworkingV1().Ingresses(namespace).Create(context.TODO(), ingress, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
@@ -216,7 +216,7 @@ func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, ho
 		Data: data,
 	}
 
-	if _, err := applySecret(c, namespace, newSecret); err != nil {
+	if _, err := c.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 

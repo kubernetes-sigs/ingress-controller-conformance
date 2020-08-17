@@ -29,7 +29,7 @@ import (
 
 var (
 	// HTTPClientTimeout specifies a time limit for requests made by a client
-	HTTPClientTimeout = 3 * time.Second
+	HTTPClientTimeout = 10 * time.Second
 )
 
 // CapturedRequest contains the original HTTP request metadata as received
@@ -80,7 +80,7 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		},
 	}
 
-	if scheme == "https" {
+	if scheme == "https" && hostname != "" {
 		tr.TLSClientConfig.ServerName = hostname
 	}
 
