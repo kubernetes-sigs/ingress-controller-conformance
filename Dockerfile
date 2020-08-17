@@ -29,7 +29,7 @@ COPY . /go/src/sigs.k8s.io/ingress-controller-conformance
 # Build
 RUN make ingress-controller-conformance
 
-FROM k8s.gcr.io/debian-hyperkube-base-amd64:0.12.1
+FROM us.gcr.io/k8s-artifacts-prod/build-image/debian-base-amd64:v2.1.3@sha256:dc06e242160076b72bd75135fb3dd0a9e91f386b2d812ec10cbf9e65864c755d
 
 RUN clean-install bash
 
