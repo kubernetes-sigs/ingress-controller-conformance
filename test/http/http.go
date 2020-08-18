@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -30,6 +32,8 @@ import (
 var (
 	// HTTPClientTimeout specifies a time limit for requests made by a client
 	HTTPClientTimeout = 10 * time.Second
+	// EnableDebug enable dump of requests and responses of HTTP requests (useful for debug)
+	EnableDebug = false
 )
 
 // CapturedRequest contains the original HTTP request metadata as received
@@ -103,11 +107,29 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		req.Host = hostname
 	}
 
+	if EnableDebug {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fmt.Printf("Sending request:\n%s\n\n", formatDump(dump, "> "))
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer resp.Body.Close()
+
+	if EnableDebug {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fmt.Printf("Received response:\n%s\n\n", formatDump(dump, "< "))
+	}
 
 	// check if the result is a redirect and return a new request
 	// this avoids the issue of URLs without valid DNS names and
@@ -159,4 +181,11 @@ func isRedirect(statusCode int) bool {
 	}
 
 	return false
+}
+
+var startLineRegex = regexp.MustCompile(`(?m)^`)
+
+func formatDump(data []byte, prefix string) string {
+	data = startLineRegex.ReplaceAllLiteral(data, []byte(prefix))
+	return string(data)
 }

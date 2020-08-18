@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/pathrules"
+	"sigs.k8s.io/ingress-controller-conformance/test/http"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes/templates"
 )
@@ -60,6 +61,7 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
 	flag.DurationVar(&kubernetes.WaitForEndpointsTimeout, "wait-time-for-ready", 5*time.Minute, "Maximum wait time for ready endpoints")
+	flag.BoolVar(&http.EnableDebug, "enable-http-debug", false, "Enable dump of requests and responses of HTTP requests (useful for debug)")
 
 	flag.Parse()
 
