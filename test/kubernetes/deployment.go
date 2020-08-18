@@ -37,7 +37,7 @@ import (
 const EchoService = "echo"
 
 // EchoContainer container image name
-const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:9505c462fed1f67953b4ed9ce06b121f93f5565a552cf1dd61fc4d86cd8a8857"
+const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:317f2dfad5e4e937275e79f783e5e7b81a88f0123a3988e8b06f9d7b1eb435c9"
 
 // NewEchoDeployment creates a new deployment of the echoserver image in a particular namespace.
 func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serviceName, servicePortName string, servicePort int32) error {
