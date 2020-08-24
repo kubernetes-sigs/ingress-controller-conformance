@@ -93,7 +93,7 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 		context,
 	}
 
-	js, err := json.Marshal(requestAssertions)
+	js, err := json.MarshalIndent(requestAssertions, "", " ")
 	if err != nil {
 		processError(w, err, http.StatusInternalServerError)
 		return
