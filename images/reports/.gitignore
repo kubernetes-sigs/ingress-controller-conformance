@@ -1,6 +1,0 @@
-target/*
-*.json
-.settings
-.project
-.classpath
-/target/
