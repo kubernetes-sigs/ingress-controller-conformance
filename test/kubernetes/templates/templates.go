@@ -86,6 +86,7 @@ kind: Service
 metadata:
   name: {{ .Name }}
 spec:
+  type: NodePort
   selector:
     app: {{ .Selector }}
   ports:
