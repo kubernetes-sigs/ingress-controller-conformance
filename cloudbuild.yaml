@@ -11,7 +11,7 @@ steps:
     - -c
     - |
       gcloud auth configure-docker \
-      && make build-image publish-image build-image publish-image
+      && make build-image publish-image
 
 substitutions:
   _GIT_TAG: "12345"
