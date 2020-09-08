@@ -6,7 +6,6 @@
 
 | Variable  | Description |
 | ------------- | ------------- |
-| BUILD  | String with identification about the build. Used to add information about the trend |
 | INPUT_DIRECTORY  | Directory that contains the cucumber json files  |
 | OUTPUT_DIRECTORY | Directory where the reports will be generated |
 
@@ -14,9 +13,8 @@
 
 | Variable  | Description |
 | ------------- | ------------- |
-| RELEASE  | Information about the release where the tests where executed |
-
-
+| INGRESS_CONTROLLER  | Information about the ingress controller |
+| CONTROLLER_VERSION  | ingress controller version |
 
 ## Building
 

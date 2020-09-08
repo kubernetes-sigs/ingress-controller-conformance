@@ -13,24 +13,12 @@
 # limitations under the License.
 
 # build stage
-FROM maven:3.6.3-openjdk-14 as builder
-
-WORKDIR /build
-
-COPY pom.xml /build/
-RUN mvn dependency:go-offline
-
-COPY src /build/src
-
-RUN mvn clean install
-
-FROM openjdk:14.0.2-slim-buster
+FROM node:lts-alpine
 
 WORKDIR /app
 
-COPY --from=builder /build/target/*jar-with-dependencies.jar report-builder.jar
+COPY src /app
 
-# https://stackoverflow.com/questions/58991966/what-java-security-egd-option-is-for
-ENV JAVA_OPTS "-Djava.security.egd=file:/dev/./urandom"
+RUN npm install --production
 
-CMD ["/bin/bash", "-c", "java $JAVA_OPTS -jar report-builder.jar"]
+CMD ["node", "/app/index.js"]
