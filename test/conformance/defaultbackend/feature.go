@@ -74,7 +74,12 @@ func anIngressResourceNamedWithThisSpec(name string, spec *messages.PickleStepAr
 		return err
 	}
 
-	err = kubernetes.NewIngress(kubernetes.KubeClient, ingress)
+	err = kubernetes.DeploymentsFromIngress(kubernetes.KubeClient, ingress)
+	if err != nil {
+		return err
+	}
+
+	err = kubernetes.NewIngress(kubernetes.KubeClient, state.Namespace, ingress)
 	if err != nil {
 		return err
 	}
@@ -91,7 +96,6 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	}
 
 	state.IPOrFQDN = ingress
-
 	return err
 }
 

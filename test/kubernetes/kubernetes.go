@@ -17,11 +17,21 @@ limitations under the License.
 package kubernetes
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"io"
+	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -137,10 +147,9 @@ func CleanupNamespaces(c kubernetes.Interface) error {
 }
 
 // NewIngress creates a new ingress
-func NewIngress(c kubernetes.Interface, ingress *networking.Ingress) error {
-	_, err := c.NetworkingV1().Ingresses(ingress.Namespace).Create(context.TODO(), ingress, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("creating Ingress: %w", err)
+func NewIngress(c kubernetes.Interface, namespace string, ingress *networking.Ingress) error {
+	if _, err := c.NetworkingV1().Ingresses(namespace).Create(context.TODO(), ingress, metav1.CreateOptions{}); err != nil {
+		return err
 	}
 
 	return nil
@@ -148,8 +157,8 @@ func NewIngress(c kubernetes.Interface, ingress *networking.Ingress) error {
 
 // IngressFromSpec deserializes an Ingress definition using an IngressSpec
 func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, error) {
-	if namespace != metav1.NamespaceNone && namespace != metav1.NamespaceDefault {
-		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed")
+	if namespace == metav1.NamespaceNone || namespace == metav1.NamespaceDefault {
+		return nil, fmt.Errorf("ingress definitions in the default namespace are not allowed (%v)", namespace)
 	}
 
 	ingress := &networking.Ingress{
@@ -168,8 +177,8 @@ func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, 
 
 // IngressFromManifest deserializes an Ingress definition using an Ingress
 func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error) {
-	if namespace != metav1.NamespaceNone && namespace != metav1.NamespaceDefault {
-		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed")
+	if namespace == metav1.NamespaceNone || namespace == metav1.NamespaceDefault {
+		return nil, fmt.Errorf("Ingress definitions in the default namespace are not allowed (%v)", namespace)
 	}
 
 	ingress := &networking.Ingress{}
@@ -181,6 +190,39 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 	return ingress, nil
 }
 
+// NewSelfSignedSecret creates a self signed SSL certificate and store it in a secret
+func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, hosts []string) error {
+	if len(hosts) == 0 {
+		return fmt.Errorf("require a non-empty hosts for Subject Alternate Name values")
+	}
+
+	var serverKey, serverCert bytes.Buffer
+
+	host := strings.Join(hosts, ",")
+
+	if err := generateRSACert(host, &serverKey, &serverCert); err != nil {
+		return err
+	}
+
+	data := map[string][]byte{
+		corev1.TLSCertKey:       serverCert.Bytes(),
+		corev1.TLSPrivateKeyKey: serverKey.Bytes(),
+	}
+
+	newSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+		},
+		Data: data,
+	}
+
+	if _, err := c.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 const (
 	// ingressWaitInterval time to wait between checks for a condition
 	ingressWaitInterval = 5 * time.Second
@@ -189,6 +231,8 @@ const (
 var (
 	// WaitForIngressAddressTimeout maximum wait time for valid ingress status value
 	WaitForIngressAddressTimeout = 5 * time.Minute
+	// WaitForEndpointsTimeout maximum wait time for ready endpoints
+	WaitForEndpointsTimeout = 5 * time.Minute
 )
 
 // WaitForIngressAddress waits for the Ingress to acquire an address.
@@ -251,4 +295,65 @@ func isRetryableAPIError(err error) bool {
 	}
 
 	return false
+}
+
+const (
+	rsaBits  = 2048
+	validFor = 365 * 24 * time.Hour
+)
+
+// generateRSACert generates a basic self signed certificate valir for a year
+func generateRSACert(host string, keyOut, certOut io.Writer) error {
+	priv, err := rsa.GenerateKey(rand.Reader, rsaBits)
+	if err != nil {
+		return fmt.Errorf("failed to generate key: %v", err)
+	}
+	notBefore := time.Now()
+	notAfter := notBefore.Add(validFor)
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+
+	if err != nil {
+		return fmt.Errorf("failed to generate serial number: %s", err)
+	}
+
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName:   "default",
+			Organization: []string{"Acme Co"},
+		},
+		NotBefore: notBefore,
+		NotAfter:  notAfter,
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	hosts := strings.Split(host, ",")
+	for _, h := range hosts {
+		if ip := net.ParseIP(h); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, h)
+		}
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+
+	if err != nil {
+		return fmt.Errorf("failed to create certificate: %s", err)
+	}
+
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return fmt.Errorf("failed creating cert: %v", err)
+	}
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+		return fmt.Errorf("failed creating key: %v", err)
+	}
+
+	return nil
 }

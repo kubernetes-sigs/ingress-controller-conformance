@@ -14,25 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
-# Shutdown the tests gracefully then save the results
-shutdown () {
-    TEST_SUITE_PID=$(pgrep ingress-controller-conformance)
-    echo "sending TERM to ${TEST_SUITE_PID}"
-    kill -s TERM "${TEST_SUITE_PID}"
-
-    # Kind of a hack to wait for this pid to finish.
-    # Since it's not a child of this shell we cannot use wait.
-    tail --pid "${TEST_SUITE_PID}" -f /dev/null
+saveResults() {
+    cd "${RESULTS_DIR}" || exit
+    tar -czf results.tar.gz ./*
+    # mark the done file as a termination notice.
+    echo -n "${RESULTS_DIR}/results.tar.gz" > "${RESULTS_DIR}/done"
 }
 
-# We get the TERM from kubernetes and handle it gracefully
-trap shutdown TERM
-
-mkdir -p "${RESULTS_DIR}"
+trap saveResults TERM
 
 set -x
 /ingress-controller-conformance \
@@ -42,5 +31,7 @@ set -x
     --wait-time-for-ingress-status="${WAIT_FOR_STATUS_TIMEOUT}" \
     --test.timeout="${TEST_TIMEOUT}"
 ret=$?
-set -x
-exit ${ret}
+#set -x
+saveResults
+#exit ${ret}
+exit 0

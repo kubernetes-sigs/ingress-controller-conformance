@@ -23,19 +23,31 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"regexp"
 	"strings"
 	"time"
+)
+
+var (
+	// HTTPClientTimeout specifies a time limit for requests made by a client
+	HTTPClientTimeout = 10 * time.Second
+	// EnableDebug enable dump of requests and responses of HTTP requests (useful for debug)
+	EnableDebug = false
 )
 
 // CapturedRequest contains the original HTTP request metadata as received
 // by the echoserver handling the test request.
 type CapturedRequest struct {
-	DownstreamServiceId string `json:"testId"` // DownstreamServiceId field contains the TEST_ID environment variable value of the downstream echoserver.
-	Path                string
-	Host                string
-	Method              string
-	Proto               string
-	Headers             map[string][]string
+	Path    string              `json:"path"`
+	Host    string              `json:"host"`
+	Method  string              `json:"method"`
+	Proto   string              `json:"proto"`
+	Headers map[string][]string `json:"headers"`
+
+	Namespace string `json:"namespace"`
+	Ingress   string `json:"ingress"`
+	Service   string `json:"service"`
 }
 
 // CapturedResponse contains the HTTP response metadata from the echoserver.
@@ -66,25 +78,42 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 				}
 
 				// Verify the certificate Hostname matches the request hostname.
-				capturedTLSHostname = hostname
+				capturedTLSHostname = certs[0].DNSNames[0]
 				return certs[0].VerifyHostname(hostname)
 			},
 		},
 	}
+
+	if scheme == "https" && hostname != "" {
+		tr.TLSClientConfig.ServerName = hostname
+	}
+
 	client := &http.Client{
 		Transport: tr,
-		Timeout:   time.Second * 3,
+		Timeout:   HTTPClientTimeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
+
 	url := fmt.Sprintf("%s://%s/%s", scheme, location, strings.TrimPrefix(path, "/"))
+
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if hostname != "" {
 		req.Host = hostname
+	}
+
+	if EnableDebug {
+		dump, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fmt.Printf("Sending request:\n%s\n\n", formatDump(dump, "> "))
 	}
 
 	resp, err := client.Do(req)
@@ -93,12 +122,36 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 	}
 	defer resp.Body.Close()
 
-	capReq := &CapturedRequest{}
-	err = json.NewDecoder(resp.Body).Decode(capReq)
-	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		err = fmt.Errorf("unexpected response (statuscode: %d, length: %d): %s", resp.StatusCode, len(body), body)
-		return nil, nil, err
+	if EnableDebug {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fmt.Printf("Received response:\n%s\n\n", formatDump(dump, "< "))
+	}
+
+	// check if the result is a redirect and return a new request
+	// this avoids the issue of URLs without valid DNS names and
+	// also sends the traffic to the ingress controller IP address or FQDN
+	if isRedirect(resp.StatusCode) {
+		redirectURL, err := resp.Location()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return CaptureRoundTrip(method, redirectURL.Scheme, redirectURL.Hostname(), redirectURL.Path, location)
+	}
+
+	capReq := CapturedRequest{}
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	// we cannot assume the response is JSON
+	if isJSON(body) {
+		err = json.Unmarshal(body, &capReq)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unexpected error reading response: %w", err)
+		}
 	}
 
 	capRes := &CapturedResponse{
@@ -108,5 +161,31 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		resp.Header,
 		capturedTLSHostname,
 	}
-	return capReq, capRes, nil
+
+	return &capReq, capRes, nil
+}
+
+func isJSON(content []byte) bool {
+	var js map[string]interface{}
+	return json.Unmarshal(content, &js) == nil
+}
+
+func isRedirect(statusCode int) bool {
+	switch statusCode {
+	case http.StatusMovedPermanently,
+		http.StatusFound,
+		http.StatusSeeOther,
+		http.StatusTemporaryRedirect,
+		http.StatusPermanentRedirect:
+		return true
+	}
+
+	return false
+}
+
+var startLineRegex = regexp.MustCompile(`(?m)^`)
+
+func formatDump(data []byte, prefix string) string {
+	data = startLineRegex.ReplaceAllLiteral(data, []byte(prefix))
+	return string(data)
 }

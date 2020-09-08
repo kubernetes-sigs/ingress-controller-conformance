@@ -65,12 +65,37 @@ func aNewRandomNamespace() error {
 	return nil
 }
 
-func aSelfsignedTLSSecretNamedForTheHostname(arg1 string, arg2 string) error {
-	return godog.ErrPending
+func anIngressResource(spec *messages.PickleStepArgument_PickleDocString) error {
+	ingress, err := kubernetes.IngressFromManifest(state.Namespace, spec.GetContent())
+	if err != nil {
+		return err
+	}
+
+	err = kubernetes.DeploymentsFromIngress(kubernetes.KubeClient, ingress)
+	if err != nil {
+		return err
+	}
+
+	err = kubernetes.NewIngress(kubernetes.KubeClient, state.Namespace, ingress)
+	if err != nil {
+		return err
+	}
+
+	state.IngressName = ingress.GetName()
+
+	return nil
 }
 
-func anIngressResource(arg1 *messages.PickleStepArgument_PickleDocString) error {
-	return godog.ErrPending
+func aSelfsignedTLSSecretNamedForTheHostname(secretName string, host string) error {
+	err := kubernetes.NewSelfSignedSecret(kubernetes.KubeClient, state.Namespace, secretName, []string{host})
+	if err != nil {
+		return err
+	}
+
+	state.SecretName = secretName
+
+	return nil
+
 }
 
 func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
@@ -84,8 +109,8 @@ func theIngressStatusShowsTheIPAddressOrFQDNWhereItIsExposed() error {
 	return err
 }
 
-func iSendARequestTo(method string, rawUrl string) error {
-	u, err := url.Parse(rawUrl)
+func iSendARequestTo(method string, rawURL string) error {
+	u, err := url.Parse(rawURL)
 	if err != nil {
 		return err
 	}

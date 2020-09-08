@@ -31,13 +31,14 @@ import (
 
 	"github.com/cucumber/godog"
 	"k8s.io/apimachinery/pkg/util/sets"
-	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/pathrules"
+	"sigs.k8s.io/ingress-controller-conformance/test/http"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
+	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes/templates"
 )
 
 var (
@@ -59,6 +60,8 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
 	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
+	flag.DurationVar(&kubernetes.WaitForEndpointsTimeout, "wait-time-for-ready", 5*time.Minute, "Maximum wait time for ready endpoints")
+	flag.BoolVar(&http.EnableDebug, "enable-http-debug", false, "Enable dump of requests and responses of HTTP requests (useful for debug)")
 
 	flag.Parse()
 
@@ -67,8 +70,7 @@ func TestMain(m *testing.M) {
 		klog.Fatalf("the godog format '%v' is not supported", godogFormat)
 	}
 
-	var err error
-	kubernetes.KubeClient, err = setupSuite()
+	err := setup()
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -82,25 +84,18 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func setupSuite() (*clientset.Clientset, error) {
-	c, err := kubernetes.LoadClientset()
+func setup() error {
+	err := templates.Load()
 	if err != nil {
-		return nil, fmt.Errorf("error loading client: %v", err)
+		return fmt.Errorf("error loading templates: %v", err)
 	}
 
-	dc := c.DiscoveryClient
-
-	serverVersion, serverErr := dc.ServerVersion()
-	if serverErr != nil {
-		return nil, fmt.Errorf("unexpected server error retrieving version: %v", serverErr)
+	kubernetes.KubeClient, err = kubernetes.LoadClientset()
+	if err != nil {
+		return fmt.Errorf("error loading client: %v", err)
 	}
 
-	if serverVersion != nil {
-		// TODO: check minimum k8s version?
-		klog.Infof("kube-apiserver version: %s", serverVersion.GitVersion)
-	}
-
-	return c, nil
+	return nil
 }
 
 // Generated code. DO NOT EDIT.
@@ -113,11 +108,20 @@ var (
 )
 
 func TestSuite(t *testing.T) {
+	var failed bool
 	for feature, scenarioContext := range features {
 		err := testFeature(feature, scenarioContext)
 		if err != nil {
-			t.Fatal(err)
+			if godogStopOnFailure {
+				t.Fatal(err)
+			}
+
+			failed = true
 		}
+	}
+
+	if failed {
+		t.Fatal("at least one step/scenario failed")
 	}
 }
 
@@ -157,7 +161,7 @@ func testFeature(feature string, scenarioInitializer func(*godog.ScenarioContext
 		Options:             &opts,
 	}.Run()
 	if exitCode > 0 {
-		return fmt.Errorf("unexpected exit code running test: %v", exitCode)
+		return fmt.Errorf("unexpected exit code testing %v: %v", feature, exitCode)
 	}
 
 	return nil
