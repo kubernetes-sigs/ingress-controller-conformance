@@ -22,7 +22,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-MINIMUM_GO_VERSION=go1.13
+MINIMUM_GO_VERSION=go1.15
 
 if [[ -z "$(command -v go)" ]]; then
     echo "
