@@ -17,8 +17,12 @@ limitations under the License.
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -33,6 +37,17 @@ type RequestAssertions struct {
 	Headers map[string][]string `json:"headers"`
 
 	Context `json:",inline"`
+
+	TLS *TLSAssertions `json:"tls,omitempty"`
+}
+
+// TLSAssertions contains information about the TLS connection.
+type TLSAssertions struct {
+	Version            string   `json:"version"`
+	PeerCertificates   []string `json:"peerCertificates,omitempty"`
+	ServerName         string   `json:"serverName"`
+	NegotiatedProtocol string   `json:"negotiatedProtocol,omitempty"`
+	CipherSuite        string   `json:"cipherSuite"`
 }
 
 type preserveSlashes struct {
@@ -54,9 +69,14 @@ type Context struct {
 var context Context
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000"
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "3000"
+	}
+
+	httpsPort := os.Getenv("HTTPS_PORT")
+	if httpsPort == "" {
+		httpsPort = "8443"
 	}
 
 	context = Context{
@@ -65,13 +85,34 @@ func main() {
 		Service:   os.Getenv("SERVICE_NAME"),
 	}
 
-	fmt.Printf("Starting server, listening on port %s\n", port)
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/health", healthHandler)
 	httpMux.HandleFunc("/", echoHandler)
+	httpHandler := &preserveSlashes{httpMux}
 
-	err := http.ListenAndServe(fmt.Sprintf(":%s", port), &preserveSlashes{httpMux})
-	if err != nil {
+	errchan := make(chan error)
+
+	go func() {
+		fmt.Printf("Starting server, listening on port %s (http)\n", httpPort)
+		err := http.ListenAndServe(fmt.Sprintf(":%s", httpPort), httpHandler)
+		if err != nil {
+			errchan <- err
+		}
+	}()
+
+	// Enable HTTPS if certificate and private key are given.
+	if os.Getenv("TLS_SERVER_CERT") != "" && os.Getenv("TLS_SERVER_PRIVKEY") != "" {
+		go func() {
+			fmt.Printf("Starting server, listening on port %s (https)\n", httpsPort)
+			err := listenAndServeTLS(fmt.Sprintf(":%s", httpsPort), os.Getenv("TLS_SERVER_CERT"), os.Getenv("TLS_SERVER_PRIVKEY"), os.Getenv("TLS_CLIENT_CACERTS"), httpHandler)
+			if err != nil {
+				errchan <- err
+			}
+		}()
+	}
+
+	select {
+	case err := <-errchan:
 		panic(fmt.Sprintf("Failed to start listening: %s\n", err.Error()))
 	}
 }
@@ -91,6 +132,8 @@ func echoHandler(w http.ResponseWriter, r *http.Request) {
 		r.Header,
 
 		context,
+
+		tlsStateToAssertions(r.TLS),
 	}
 
 	js, err := json.MarshalIndent(requestAssertions, "", " ")
@@ -120,4 +163,68 @@ func processError(w http.ResponseWriter, err error, code int) {
 
 	w.WriteHeader(code)
 	w.Write(body)
+}
+
+func listenAndServeTLS(addr string, serverCert string, serverPrivKey string, clientCA string, handler http.Handler) error {
+	var config tls.Config
+
+	// Optionally enable client certificate validation when client CA certificates are given.
+	if clientCA != "" {
+		ca, err := ioutil.ReadFile(clientCA)
+		if err != nil {
+			return err
+		}
+
+		certPool := x509.NewCertPool()
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			return fmt.Errorf("unable to append certificate in %q to CA pool", clientCA)
+		}
+
+		// Verify certificate against given CA but also allow unauthenticated connections.
+		config.ClientAuth = tls.VerifyClientCertIfGiven
+		config.ClientCAs = certPool
+	}
+
+	srv := &http.Server{
+		Addr:      addr,
+		Handler:   handler,
+		TLSConfig: &config,
+	}
+
+	return srv.ListenAndServeTLS(serverCert, serverPrivKey)
+}
+
+func tlsStateToAssertions(connectionState *tls.ConnectionState) *TLSAssertions {
+	if connectionState != nil {
+		var state TLSAssertions
+
+		switch connectionState.Version {
+		case tls.VersionTLS13:
+			state.Version = "TLSv1.3"
+		case tls.VersionTLS12:
+			state.Version = "TLSv1.2"
+		case tls.VersionTLS11:
+			state.Version = "TLSv1.1"
+		case tls.VersionTLS10:
+			state.Version = "TLSv1.0"
+		}
+
+		state.NegotiatedProtocol = connectionState.NegotiatedProtocol
+		state.ServerName = connectionState.ServerName
+		state.CipherSuite = tls.CipherSuiteName(connectionState.CipherSuite)
+
+		// Convert peer certificates to PEM blocks.
+		for _, c := range connectionState.PeerCertificates {
+			var out strings.Builder
+			pem.Encode(&out, &pem.Block{
+				Type:  "CERTIFICATE",
+				Bytes: c.Raw,
+			})
+			state.PeerCertificates = append(state.PeerCertificates, out.String())
+		}
+
+		return &state
+	}
+
+	return nil
 }
