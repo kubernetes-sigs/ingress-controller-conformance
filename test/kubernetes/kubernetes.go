@@ -172,6 +172,10 @@ func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, 
 		return nil, fmt.Errorf("deserializing Ingress from spec: %w", err)
 	}
 
+	if ingress.Spec.IngressClassName == nil {
+		ingress.Spec.IngressClassName = &IngressClassValue
+	}
+
 	return ingress, nil
 }
 
@@ -187,6 +191,11 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 	}
 
 	ingress.SetNamespace(namespace)
+
+	if ingress.Spec.IngressClassName == nil {
+		ingress.Spec.IngressClassName = &IngressClassValue
+	}
+
 	return ingress, nil
 }
 
