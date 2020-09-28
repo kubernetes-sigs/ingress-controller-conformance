@@ -57,11 +57,15 @@ type CapturedResponse struct {
 	Proto         string
 	Headers       map[string][]string
 	TLSHostname   string
+
+	Certificate *x509.Certificate
 }
 
 // CaptureRoundTrip will perform an HTTP request and return the CapturedRequest and CapturedResponse tuple
 func CaptureRoundTrip(method, scheme, hostname, path, location string) (*CapturedRequest, *CapturedResponse, error) {
 	var capturedTLSHostname string
+	var certificate *x509.Certificate
+
 	tr := &http.Transport{
 		DisableCompression: true,
 		TLSClientConfig: &tls.Config{
@@ -77,9 +81,9 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 					certs[i] = cert
 				}
 
-				// Verify the certificate Hostname matches the request hostname.
 				capturedTLSHostname = certs[0].DNSNames[0]
-				return certs[0].VerifyHostname(hostname)
+				certificate = certs[0]
+				return nil
 			},
 		},
 	}
@@ -160,6 +164,7 @@ func CaptureRoundTrip(method, scheme, hostname, path, location string) (*Capture
 		resp.Proto,
 		resp.Header,
 		capturedTLSHostname,
+		certificate,
 	}
 
 	return &capReq, capRes, nil
