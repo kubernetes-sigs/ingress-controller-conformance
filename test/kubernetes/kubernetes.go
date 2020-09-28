@@ -50,12 +50,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-const (
-	// IngressClassKey indicates the class of an Ingress to be used
-	// when determining which controller should implement the Ingress
-	IngressClassKey = "kubernetes.io/ingress.class"
-)
-
 // IngressClassValue sets the value of the class of Ingresses
 var IngressClassValue string
 
