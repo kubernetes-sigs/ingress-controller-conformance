@@ -118,7 +118,17 @@ func iSendARequestTo(method string, rawURL string) error {
 }
 
 func theSecureConnectionMustVerifyTheHostname(hostname string) error {
-	return state.AssertTLSHostname(hostname)
+	err := state.AssertTLSHostname(hostname)
+	if err != nil {
+		return err
+	}
+
+	err = state.AssertResponseCertificate(hostname)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func theResponseStatuscodeMustBe(statusCode int) error {

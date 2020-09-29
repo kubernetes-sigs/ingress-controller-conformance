@@ -167,3 +167,13 @@ func (s *Scenario) AssertRequestHeader(headerKey string, headerValue string) err
 
 	return nil
 }
+
+// AssertResponseCertificate returns nil if the captured certificate for the named host is valid.
+// Otherwise it returns an error describing the mismatch.
+func (s *Scenario) AssertResponseCertificate(hostname string) error {
+	if s.CapturedResponse == nil || s.CapturedResponse.Certificate == nil {
+		return fmt.Errorf("hostname verification requires executing a request and also target an HTTPS URL")
+	}
+
+	return s.CapturedResponse.Certificate.VerifyHostname(hostname)
+}
