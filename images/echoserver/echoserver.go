@@ -49,6 +49,7 @@ type Context struct {
 	Namespace string `json:"namespace"`
 	Ingress   string `json:"ingress"`
 	Service   string `json:"service"`
+	Pod       string `json:"pod"`
 }
 
 var context Context
@@ -63,6 +64,7 @@ func main() {
 		Namespace: os.Getenv("NAMESPACE"),
 		Ingress:   os.Getenv("INGRESS_NAME"),
 		Service:   os.Getenv("SERVICE_NAME"),
+		Pod:       os.Getenv("POD_NAME"),
 	}
 
 	fmt.Printf("Starting server, listening on port %s\n", port)
