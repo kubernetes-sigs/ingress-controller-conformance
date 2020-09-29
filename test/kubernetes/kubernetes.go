@@ -38,6 +38,7 @@ import (
 	networking "k8s.io/api/networking/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -107,6 +108,11 @@ func NewNamespace(c kubernetes.Interface) (string, error) {
 
 	var err error
 
+	err = displayYamlDefinition(ns)
+	if err != nil {
+		return "", fmt.Errorf("unable show yaml definition: %v", err)
+	}
+
 	ns, err = c.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("unable to create namespace: %v", err)
@@ -148,6 +154,11 @@ func CleanupNamespaces(c kubernetes.Interface) error {
 
 // NewIngress creates a new ingress
 func NewIngress(c kubernetes.Interface, namespace string, ingress *networking.Ingress) error {
+	err := displayYamlDefinition(ingress)
+	if err != nil {
+		return fmt.Errorf("unable show yaml definition: %v", err)
+	}
+
 	if _, err := c.NetworkingV1().Ingresses(namespace).Create(context.TODO(), ingress, metav1.CreateOptions{}); err != nil {
 		return err
 	}
@@ -216,6 +227,11 @@ func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, ho
 		Data: data,
 	}
 
+	err := displayYamlDefinition(newSecret)
+	if err != nil {
+		return fmt.Errorf("unable show yaml definition: %v", err)
+	}
+
 	if _, err := c.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{}); err != nil {
 		return err
 	}
@@ -233,6 +249,9 @@ var (
 	WaitForIngressAddressTimeout = 5 * time.Minute
 	// WaitForEndpointsTimeout maximum wait time for ready endpoints
 	WaitForEndpointsTimeout = 5 * time.Minute
+
+	// EnableOutputYamlDefinitions display yaml definitions of Kubernetes objects before creation
+	EnableOutputYamlDefinitions = false
 )
 
 // WaitForIngressAddress waits for the Ingress to acquire an address.
@@ -356,4 +375,18 @@ func generateRSACert(host string, keyOut, certOut io.Writer) error {
 	}
 
 	return nil
+}
+
+func displayYamlDefinition(obj apiruntime.Object) error {
+	if !EnableOutputYamlDefinitions {
+		return nil
+	}
+
+	output, err := yaml.Marshal(obj)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprint(os.Stdout, fmt.Sprintf("---\n%s\n", output))
+	return err
 }

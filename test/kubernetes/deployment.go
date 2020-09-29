@@ -86,6 +86,11 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 		return err
 	}
 
+	err = displayYamlDefinition(deployment)
+	if err != nil {
+		return fmt.Errorf("unable show yaml definition: %v", err)
+	}
+
 	_, err = kubeClientSet.AppsV1().Deployments(namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("creating deployment (%v): %w", deployment.Name, err)
@@ -118,6 +123,11 @@ func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serv
 	// if no port is defined, use default 8080
 	if servicePort == 0 {
 		service.Spec.Ports[0].Port = 8080
+	}
+
+	err = displayYamlDefinition(service)
+	if err != nil {
+		return fmt.Errorf("unable show yaml definition: %v", err)
 	}
 
 	service, err = kubeClientSet.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
