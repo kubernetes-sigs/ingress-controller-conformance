@@ -62,6 +62,7 @@ func TestMain(m *testing.M) {
 	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
 	flag.DurationVar(&kubernetes.WaitForEndpointsTimeout, "wait-time-for-ready", 5*time.Minute, "Maximum wait time for ready endpoints")
 	flag.BoolVar(&http.EnableDebug, "enable-http-debug", false, "Enable dump of requests and responses of HTTP requests (useful for debug)")
+	flag.BoolVar(&kubernetes.EnableOutputYamlDefinitions, "enable-output-yaml-definitions", false, "Dump yaml definitions of Kubernetes objects before creation")
 
 	flag.Parse()
 
