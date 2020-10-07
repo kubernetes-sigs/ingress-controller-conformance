@@ -51,12 +51,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-const (
-	// IngressClassKey indicates the class of an Ingress to be used
-	// when determining which controller should implement the Ingress
-	IngressClassKey = "kubernetes.io/ingress.class"
-)
-
 // IngressClassValue sets the value of the class of Ingresses
 var IngressClassValue string
 
@@ -183,6 +177,10 @@ func IngressFromSpec(name, namespace, ingressSpec string) (*networking.Ingress, 
 		return nil, fmt.Errorf("deserializing Ingress from spec: %w", err)
 	}
 
+	if ingress.Spec.IngressClassName == nil {
+		ingress.Spec.IngressClassName = &IngressClassValue
+	}
+
 	return ingress, nil
 }
 
@@ -198,6 +196,11 @@ func IngressFromManifest(namespace, manifest string) (*networking.Ingress, error
 	}
 
 	ingress.SetNamespace(namespace)
+
+	if ingress.Spec.IngressClassName == nil {
+		ingress.Spec.IngressClassName = &IngressClassValue
+	}
+
 	return ingress, nil
 }
 

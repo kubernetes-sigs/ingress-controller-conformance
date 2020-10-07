@@ -35,6 +35,7 @@ import (
 
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/defaultbackend"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/hostrules"
+	"sigs.k8s.io/ingress-controller-conformance/test/conformance/ingressclass"
 	"sigs.k8s.io/ingress-controller-conformance/test/conformance/pathrules"
 	"sigs.k8s.io/ingress-controller-conformance/test/http"
 	"sigs.k8s.io/ingress-controller-conformance/test/kubernetes"
@@ -105,6 +106,7 @@ var (
 		"features/default_backend.feature": defaultbackend.InitializeScenario,
 		"features/host_rules.feature":      hostrules.InitializeScenario,
 		"features/path_rules.feature":      pathrules.InitializeScenario,
+		"features/ingress_class.feature":   ingressclass.InitializeScenario,
 	}
 )
 
