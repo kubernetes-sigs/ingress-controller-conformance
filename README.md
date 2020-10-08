@@ -9,14 +9,14 @@ Such descriptions are located in the [features][./features] directory.
 
 ## Running
 
-The `ingress-conformance-tests` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
+The `ingress-controller-conformance` tool embeds copies of the Kubernetes resources that are used in the conformance checks.
 
 #### Help
 
 ```
-$ ./ingress-conformance-tests --help
+$ ./ingress-controller-conformance --help
 
-Usage of ./ingress-conformance-tests:
+Usage of ./ingress-controller-conformance:
   -format string                            Set godog format to use. Valid values are pretty and cucumber (default "pretty")
   -ingress-class string                     Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions (default "conformance")
   -no-colors                                Disable colors in godog output
@@ -45,7 +45,7 @@ $ curl localhost:3000
 
 ## Building
 
-#### Build the `ingress-conformance-tests` CLI:
+#### Build the `ingress-controller-conformance` CLI:
 
 ```console
 $ make build

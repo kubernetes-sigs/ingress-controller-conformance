@@ -24,4 +24,4 @@ OWNERS
 SECURITY_CONTACTS
 
 # binaries
-ingress-conformance-tests
+ingress-controller-conformance
