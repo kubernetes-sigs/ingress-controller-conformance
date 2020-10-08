@@ -22,6 +22,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +38,7 @@ import (
 const EchoService = "echo"
 
 // EchoContainer container image name
-const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:317f2dfad5e4e937275e79f783e5e7b81a88f0123a3988e8b06f9d7b1eb435c9"
+const EchoContainer = "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:689edd2f21dd92a2faa31278c141e55f4b78e68f55b1a7f992cf43f4c446d13b"
 
 // NewEchoDeployment creates a new deployment of the echoserver image in a particular namespace.
 func NewEchoDeployment(kubeClientSet kubernetes.Interface, namespace, name, serviceName, servicePortName string, servicePort int32) error {
@@ -170,6 +171,35 @@ func DeploymentsFromIngress(kubeClientSet kubernetes.Interface, ingress *network
 			}
 		}
 	}
+
+	return nil
+}
+
+// ScaleIngressBackendDeployment changes the replicas count of a deployment defined in an ingress service backend
+func ScaleIngressBackendDeployment(kubeClientSet kubernetes.Interface, namespace, name, serviceName string, replicas int) error {
+	deploymentName := fmt.Sprintf("%v-%v", name, serviceName)
+
+	scale := &autoscalingv1.Scale{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: namespace,
+		},
+		Spec: autoscalingv1.ScaleSpec{
+			Replicas: int32(replicas),
+		},
+	}
+
+	_, err := kubeClientSet.AppsV1().Deployments(namespace).UpdateScale(context.TODO(), deploymentName, scale, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = waitForEndpoints(kubeClientSet, WaitForEndpointsTimeout, namespace, serviceName, replicas)
+	if err != nil {
+		return fmt.Errorf("waiting for service (%v) endpoints available: %w", serviceName, err)
+	}
+
+	time.Sleep(60 * time.Second)
 
 	return nil
 }

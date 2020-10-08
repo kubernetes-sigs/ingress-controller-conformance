@@ -426,7 +426,7 @@ func toContextStepsfuncs(funcs []Function) ([]ast.Stmt, error) {
 	astStepsTpl := `
 package codegen
 func InitializeScenario() { {{ range . }}
-	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
+	ctx.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
 }
 `
 	astFile, err := astFromTemplate(astStepsTpl, funcs)
