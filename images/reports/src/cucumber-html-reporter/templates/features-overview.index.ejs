@@ -24,10 +24,10 @@
   </nav>
   <main role="main" class="container">
     <div class="row mb-3 p-3">
-      <div class="col-sm-6 col-md-6 col-lg-4 offset-lg-1">
+      <div class="col-lg-6">
         <%- include('components/features-overview.chart.ejs') %>
       </div>
-      <div class="col-sm-6 col-md-6 col-lg-4 offset-lg-1">
+      <div class="col-lg-6">
         <%- include('components/scenarios-overview.chart.ejs', {overviewPage: true, scenarios: suite.totalScenariosCount}) %>
       </div>
     </div>
@@ -55,6 +55,7 @@
       var featureOptions = {
         legend: false,
         responsive: true,
+        maintainAspectRatio: false,
       };
 
       new Chart(document.getElementById("feature-chart"), {
@@ -95,6 +96,7 @@
       var scenarioOptions = {
         legend: false,
         responsive: true,
+        maintainAspectRatio: false,
       };
       new Chart(document.getElementById("scenario-chart"), {
         type: "doughnut",
