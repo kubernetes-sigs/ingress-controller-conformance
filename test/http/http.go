@@ -48,6 +48,7 @@ type CapturedRequest struct {
 	Namespace string `json:"namespace"`
 	Ingress   string `json:"ingress"`
 	Service   string `json:"service"`
+	Pod       string `json:"pod"`
 }
 
 // CapturedResponse contains the HTTP response metadata from the echoserver.
