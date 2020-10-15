@@ -1,0 +1,74 @@
+name: Conformance
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  push:
+    branches:
+      - master
+
+jobs:
+
+  conformance:
+    runs-on: ubuntu-latest
+
+    env:
+      INGRESS_CLASS: ${{ secrets.INGRESS_CLASS }}
+      INGRESS_CONTROLLER_URL: ${{ secrets.INGRESS_CONTROLLER_URL }}
+      INGRESS_CONTROLLER: ${{ secrets.INGRESS_CONTROLLER }}
+      CONTROLLER_VERSION: ${{ secrets.CONTROLLER_VERSION }}
+      INGRESS_CONFORMANCE_IMAGE: ${{ secrets.INGRESS_CONFORMANCE_IMAGE }}
+
+    steps:
+
+      - name: Prepare environment
+        run: |
+          if [ -z "${INGRESS_CONTROLLER_URL}" ]; then
+            echo "Secret variable INGRESS_CONTROLLER_URL must be set"
+            exit 1
+          fi
+          if [ -z "${INGRESS_CONFORMANCE_IMAGE}" ]; then
+            echo "Secret variable INGRESS_CONFORMANCE_IMAGE must be set"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Prepare environment
+        run: |
+          sudo bash -c 'curl -sSL https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.4/sonobuoy_0.18.4_linux_amd64.tar.gz | tar xvz -C /usr/local/bin/ sonobuoy'
+          # optional step to cleanup the generated HTML
+          sudo bash -c 'apt update && apt install -y tidy'
+
+      - name: Create Kubernetes cluster
+        uses: engineerd/setup-kind@v0.4.0
+        with:
+          version: v0.8.1
+          config: .github/kind.yaml
+          image: kindest/node:v1.19.0
+
+      - name: Prepare cluster for testing
+        run: |
+          kubectl version
+          echo "Installing ingress controller..."
+          kubectl apply -f "${INGRESS_CONTROLLER_URL}"
+
+      - name: Run conformance tests
+        run: |
+          .github/conformance.sh
+
+      - name: Generate reports
+        run: |
+          # clone the gh-pages repository branch
+          export TEMP_WORKTREE=$(mktemp -d)
+          remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          git clone --branch=gh-pages --depth=1 "${remote_repo}" "${TEMP_WORKTREE}"
+
+          .github/generate-reports.sh
+
+      - name: Upload cucumber json files
+        uses: actions/upload-artifact@v2
+        with:
+          name: cucumber-output
+          path: /tmp/reports/*

@@ -1,0 +1,94 @@
+name: Conformance
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  push:
+    branches:
+      - master
+
+jobs:
+
+  conformance:
+    runs-on: ubuntu-latest
+
+    env:
+      INGRESS_CLASS: ${{ secrets.INGRESS_CLASS }}
+      INGRESS_CONTROLLER: ${{ secrets.INGRESS_CONTROLLER }}
+      INGRESS_CONFORMANCE_IMAGE: ${{ secrets.INGRESS_CONFORMANCE_IMAGE }}
+      CONTROLLER_VERSION: ${{ secrets.CONTROLLER_VERSION }}
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      RUN_REGION: us-central1
+      KUBERNETES_PROVIDER: gce
+      KUBE_GCE_ZONE: us-central1-c
+      NUM_NODES: 1
+      PREEMPTIBLE_MASTER: true
+      PREEMPTIBLE_NODE: true
+      KUBERNETES_RELEASE: v1.19.0
+
+      WAIT_FOR_STATUS_TIMEOUT: ${{ secrets.WAIT_FOR_STATUS_TIMEOUT }}
+      TEST_TIMEOUT: ${{ secrets.TEST_TIMEOUT }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: gcloud Set up
+        run: |
+          gcloud components install beta
+          gcloud components install alpha
+
+      - name: Prepare environment (1)
+        run: |
+          mkdir -p scripts
+
+      - name: Prepare Kubernetes environment (2)
+        working-directory: scripts
+        run: |
+          curl -sS https://get.k8s.io | bash
+          cd kubernetes
+          cluster/kube-down.sh || true
+          cluster/kube-up.sh
+
+          sleep 60
+
+          kubectl create clusterrolebinding $(whoami) --clusterrole=cluster-admin --user=$(gcloud config get-value core/account) || true
+
+      - name: Prepare test environment (3)
+        run: |
+          sudo bash -c 'curl -sSL https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.4/sonobuoy_0.18.4_linux_amd64.tar.gz | tar xvz -C /usr/local/bin/ sonobuoy'
+          # optional step to cleanup the generated HTML
+          sudo bash -c 'apt update && apt install -y tidy'
+
+      - name: Run conformance tests
+        run: |
+          kubectl delete namespace sonobuoy || true
+          .github/conformance.sh
+
+      - name: Generate reports
+        run: |
+          # clone the gh-pages repository branch
+          export TEMP_WORKTREE=$(mktemp -d)
+          remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+          git clone --branch=gh-pages --depth=1 "${remote_repo}" "${TEMP_WORKTREE}"
+
+          .github/generate-reports.sh
+
+      - name: Upload cucumber json files
+        uses: actions/upload-artifact@v2
+        with:
+          name: cucumber-output
+          path: /tmp/reports/*
+
+      - name: Cleanup
+        if: ${{ always() }}
+        working-directory: scripts
+        run: |
+          cd kubernetes
+          cluster/kube-down.sh || true
