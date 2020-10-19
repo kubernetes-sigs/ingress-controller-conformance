@@ -165,10 +165,10 @@ Feature: Path rules
     And the request path must be "/aaa/ccc"
 
   Scenario: An Ingress with prefix path rules should match each labels string prefix
-    (prefix /aaa does not match request /aaaccc)
+    (prefix /aaa matches request /aaaccc)
 
     When I send a "GET" request to "http://prefix-path-rules/aaaccc"
-    Then the response status-code must be 404
+    Then the response status-code must be 200
 
   Scenario: An Ingress with prefix path rules should ignore the request trailing slash and send traffic to the matching backend service
     (prefix /foo matches request /foo/)
@@ -201,9 +201,3 @@ Feature: Path rules
     Then the response status-code must be 200
     And the response must be served by the "aaa-slash-bbb-slash-prefix" service
     And the request path must be "/aaa/bbb/"
-
-  Scenario: An Ingress with a trailing slashes in an exact path rule should not match requests without a trailing slash
-    (exact /foo/ does not match request /foo)
-
-    When I send a "GET" request to "http://trailing-slash-path-rules/foo"
-    Then the response status-code must be 404
