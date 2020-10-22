@@ -17,13 +17,26 @@ The `ingress-controller-conformance` tool embeds copies of the Kubernetes resour
 $ ./ingress-controller-conformance --help
 
 Usage of ./ingress-controller-conformance:
-  -format string                            Set godog format to use. Valid values are pretty and cucumber (default "pretty")
-  -ingress-class string                     Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions (default "conformance")
-  -no-colors                                Disable colors in godog output
-  -output-directory string                  Output directory for test reports (default ".")
-  -stop-on-failure                          Stop when failure is found
-  -tags string                              Tags for conformance test
-  -wait-time-for-ingress-status duration    Maximum wait time for valid ingress status value (default 5m0s)
+  -enable-http-debug
+    	Enable dump of requests and responses of HTTP requests (useful for debug)
+  -enable-output-yaml-definitions
+    	Dump yaml definitions of Kubernetes objects before creation
+  -format string
+    	Set godog format to use. Valid values are pretty and cucumber (default "pretty")
+  -ingress-class string
+    	Sets the name of the IngressClass to use in Ingress definitions (default "conformance")
+  -no-colors
+    	Disable colors in godog output
+  -output-directory string
+    	Output directory for test reports (default ".")
+  -stop-on-failure
+    	Stop when failure is found
+  -tags string
+    	Tags for conformance test
+  -wait-time-for-ingress-status duration
+    	Maximum wait time for valid ingress status value (default 5m0s)
+  -wait-time-for-ready duration
+    	Maximum wait time for ready endpoints (default 5m0s)
 ```
 
 ### ingress-conformance-echo
