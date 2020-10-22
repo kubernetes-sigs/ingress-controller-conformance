@@ -98,7 +98,6 @@ Feature: Path rules
     When I send a "GET" request to "http://exact-path-rules/foo"
     Then the response status-code must be 200
     And the response must be served by the "foo-exact" service
-    And the request path must be "/foo"
 
   Scenario: An Ingress with exact path rules should not match requests with trailing slash
     (exact /foo does not match request /foo/)
@@ -124,7 +123,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/foo"
     Then the response status-code must be 200
     And the response must be served by the "foo-prefix" service
-    And the request path must be "/foo"
 
   Scenario: An Ingress with prefix path rules should ignore the request trailing slash and send traffic to the matching backend service
     (prefix /foo matches request /foo/)
@@ -132,7 +130,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/foo/"
     Then the response status-code must be 200
     And the response must be served by the "foo-prefix" service
-    And the request path must be "/foo/"
 
   Scenario: An Ingress with prefix path rules should be case sensitive
     (prefix /foo does not match request /FOO)
@@ -146,7 +143,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/aaa/bbb"
     Then the response status-code must be 200
     And the response must be served by the "aaa-slash-bbb-prefix" service
-    And the request path must be "/aaa/bbb"
 
   Scenario: An Ingress with prefix path rules should match multiple labels, match the longest path, and subpaths and send traffic to the matching backend service
     (prefix /aaa/bbb matches request /aaa/bbb/ccc)
@@ -154,7 +150,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/aaa/bbb/ccc"
     Then the response status-code must be 200
     And the response must be served by the "aaa-slash-bbb-prefix" service
-    And the request path must be "/aaa/bbb/ccc"
 
   Scenario: An Ingress with prefix path rules should and send traffic to the matching backend service
     (prefix /aaa matches request /aaa/ccc)
@@ -162,7 +157,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/aaa/ccc"
     Then the response status-code must be 200
     And the response must be served by the "aaa-prefix" service
-    And the request path must be "/aaa/ccc"
 
   Scenario: An Ingress with prefix path rules should match each labels string prefix
     (prefix /aaa does not match request /aaaccc)
@@ -176,7 +170,6 @@ Feature: Path rules
     When I send a "GET" request to "http://prefix-path-rules/foo/"
     Then the response status-code must be 200
     And the response must be served by the "foo-prefix" service
-    And the request path must be "/foo/"
 
   Scenario: An Ingress with mixed path rules should send traffic to the matching backend service where Exact is preferred
     (exact /foo matches request /foo)
@@ -184,7 +177,6 @@ Feature: Path rules
     When I send a "GET" request to "http://mixed-path-rules/foo"
     Then the response status-code must be 200
     And the response must be served by the "foo-exact" service
-    And the request path must be "/foo"
 
   Scenario: An Ingress with a trailing slashes in a prefix path rule should ignore the trailing slash and send traffic to the matching backend service
     (prefix /aaa/bbb/ matches request /aaa/bbb)
@@ -192,7 +184,6 @@ Feature: Path rules
     When I send a "GET" request to "http://trailing-slash-path-rules/aaa/bbb"
     Then the response status-code must be 200
     And the response must be served by the "aaa-slash-bbb-slash-prefix" service
-    And the request path must be "/aaa/bbb"
 
   Scenario: An Ingress with a trailing slashes in a prefix path rule should ignore the trailing slash and send traffic to the matching backend service
     (prefix /aaa/bbb/ matches request /aaa/bbb/)
@@ -200,7 +191,6 @@ Feature: Path rules
     When I send a "GET" request to "http://trailing-slash-path-rules/aaa/bbb/"
     Then the response status-code must be 200
     And the response must be served by the "aaa-slash-bbb-slash-prefix" service
-    And the request path must be "/aaa/bbb/"
 
   Scenario: An Ingress with a trailing slashes in an exact path rule should not match requests without a trailing slash
     (exact /foo/ does not match request /foo)
