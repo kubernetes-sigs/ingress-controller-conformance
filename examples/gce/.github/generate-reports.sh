@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-REPORT_BUILDER_IMAGE=gcr.io/k8s-staging-ingressconformance/reports-builder@sha256:73326b3ac905fefdcc8bc2771107afed7975e790fd2b5ed2d73b5874f731ef04
+REPORT_BUILDER_IMAGE=gcr.io/k8s-staging-ingressconformance/reports-builder@sha256:50af5c546c839203cc34f6d97f1e93ac19e00b2037ae09c9d4c6d37624a780d9
 
 echo "Extracting reports from sonobuoy"
 SONOBUOY_REPORTS=/tmp/reports
