@@ -158,12 +158,6 @@ Feature: Path rules
     Then the response status-code must be 200
     And the response must be served by the "aaa-prefix" service
 
-  Scenario: An Ingress with prefix path rules should match each labels string prefix
-    (prefix /aaa does not match request /aaaccc)
-
-    When I send a "GET" request to "http://prefix-path-rules/aaaccc"
-    Then the response status-code must be 404
-
   Scenario: An Ingress with prefix path rules should ignore the request trailing slash and send traffic to the matching backend service
     (prefix /foo matches request /foo/)
 
