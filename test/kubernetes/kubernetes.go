@@ -227,6 +227,7 @@ func NewSelfSignedSecret(c clientset.Interface, namespace, secretName string, ho
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
 		},
+		Type: corev1.SecretTypeTLS,
 		Data: data,
 	}
 
