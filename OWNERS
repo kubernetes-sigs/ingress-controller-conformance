@@ -1,5 +1,13 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-- bowei
-- thockin
+  - bowei
+  - thockin
+  - alexgervais
+  - aledbf
+
+reviewers:
+  - bowei
+  - thockin
+  - alexgervais
+  - aledbf
