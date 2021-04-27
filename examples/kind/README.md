@@ -32,4 +32,4 @@ where:
 
 values:
 
-- **INGRESS_CONFORMANCE_IMAGE:** `gcr.io/k8s-staging-ingressconformance/ingress-controller-conformance@sha256:33ad42ede4ae8b2f2f205da855bf0af12f78ec1860ca5713af5b82867235c502`
+- **INGRESS_CONFORMANCE_IMAGE:** `gcr.io/k8s-staging-ingressconformance/ingress-controller-conformance@sha256:148a649b7d009e8544e2631950b0c05a41cf9a50ede39e20b76bdaaf2ffb873b`

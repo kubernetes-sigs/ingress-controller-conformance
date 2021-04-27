@@ -60,7 +60,7 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
 	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
-	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
+	flag.StringVar(&kubernetes.IngressClassValue, "ingress-class", "conformance", "Sets the name of the IngressClass to use in Ingress definitions")
 	flag.DurationVar(&kubernetes.WaitForIngressAddressTimeout, "wait-time-for-ingress-status", 5*time.Minute, "Maximum wait time for valid ingress status value")
 	flag.DurationVar(&kubernetes.WaitForEndpointsTimeout, "wait-time-for-ready", 5*time.Minute, "Maximum wait time for ready endpoints")
 	flag.BoolVar(&http.EnableDebug, "enable-http-debug", false, "Enable dump of requests and responses of HTTP requests (useful for debug)")

@@ -40,7 +40,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I send a "([^"]*)" request to "([^"]*)"$`, iSendARequestTo)
 	ctx.Step(`^the response status-code must be (\d+)$`, theResponseStatuscodeMustBe)
 	ctx.Step(`^the response must be served by the "([^"]*)" service$`, theResponseMustBeServedByTheService)
-	ctx.Step(`^the request path must be "([^"]*)"$`, theRequestPathMustBe)
 
 	ctx.BeforeScenario(func(*godog.Scenario) {
 		state = tstate.New()
@@ -105,8 +104,4 @@ func theResponseStatuscodeMustBe(statusCode int) error {
 
 func theResponseMustBeServedByTheService(service string) error {
 	return state.AssertServedBy(service)
-}
-
-func theRequestPathMustBe(path string) error {
-	return state.AssertRequestPath(path)
 }
