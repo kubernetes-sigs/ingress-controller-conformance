@@ -25,6 +25,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -89,6 +91,7 @@ func main() {
 
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/health", healthHandler)
+	httpMux.HandleFunc("/status/", statusHandler)
 	httpMux.HandleFunc("/", echoHandler)
 	httpHandler := &preserveSlashes{httpMux}
 
@@ -122,6 +125,18 @@ func main() {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Write([]byte(`OK`))
+}
+
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	code := http.StatusBadRequest
+
+	re := regexp.MustCompile(`^/status/(\d\d\d)$`)
+	match := re.FindStringSubmatch(r.RequestURI)
+	if match != nil {
+		code, _ = strconv.Atoi(match[1])
+	}
+
+	w.WriteHeader(code)
 }
 
 func echoHandler(w http.ResponseWriter, r *http.Request) {
